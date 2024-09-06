@@ -12,7 +12,8 @@ import Typewriter from './Typewriter'; // Import the Typewriter component
 import { LocalHospital as StethoscopeIcon } from '@mui/icons-material';
 import { Devices as DevicesIcon, Psychology as PsychologyIcon, MenuBook as MenuBookIcon, Dashboard as DashboardIcon, Assistant as AssistantIcon, Update as UpdateIcon } from '@mui/icons-material';
 import { useUser } from '@clerk/nextjs';
-
+import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import { styled } from '@mui/material/styles';
 
 // Import all necessary icons
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
@@ -26,6 +27,7 @@ export default function Home() {
   const router = useRouter();
   const { user } = useUser();
   const [darkMode, setDarkMode] = useState(true);
+  const [showIcon, setShowIcon] = useState(false);
 
   const theme = createTheme({
     palette: {
@@ -69,6 +71,33 @@ export default function Home() {
       },
     },
   });
+   
+  const CoolEffectTypography = styled(Typography)(({ theme }) => ({
+    
+    color: theme.palette.secondary.light, // A lighter color for better visibility
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    textShadow: '2px 2px 6px #ffffff', // Brighter shadow for contrast
+    fontSize: '2.5rem',
+    letterSpacing: '3px',
+    background: '-webkit-linear-gradient(45deg, #FFFFFF 30%, #CCCCCC 90%)', // Lighter gradient
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    margin: '40px 0'
+  }));
+
+  const CoolEffectTypography2 = styled(Typography)(({ theme }) => ({
+    color: theme.palette.primary.dark, // Darker color for better visibility on white background
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    fontSize: '2.5rem',
+    letterSpacing: '3px',
+    background: '-webkit-linear-gradient(45deg, #000000 30%, #666666 90%)', // Darker gradient for a striking effect
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent', // Maintain transparent text fill to let the gradient show through
+    margin: '40px 0'
+}));
+
 
   const handleCheckout = async () => {
     const checkoutSession = await fetch('/api/checkout_session', {
@@ -111,8 +140,8 @@ export default function Home() {
             elevation={2}
         >
             <Toolbar>
-                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' , mb:-1}}>
-                    <Image src="/logo1.png" alt="Vaccinity AI Logo" width={190} height={100}  />
+                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' , mb:-1.25}}>
+                    <Image src="/logo1.png" alt="Vaccinity AI Logo" width={205} height={100}  />
                 </Box>
                 
                 <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', mr: 3 }}>
@@ -172,8 +201,8 @@ export default function Home() {
         <Typewriter text="VaccinityAI"/>
       </span>
     </Typography>
-    <Typography variant="h5" gutterBottom sx={{ maxWidth: '650px', mx: 'auto', mb: 4 }}>
-      Empowering patients to take control of their health journey.
+    <Typography variant="h5" gutterBottom sx={{ maxWidth: '655px', mx: 'auto', mb: 4 }}>
+      Empowering patients to take control of their health journey
     </Typography>
     <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 4 }}>
       <Button
@@ -208,7 +237,7 @@ export default function Home() {
       </span>
     </Typography>
     <Typography variant="h5" gutterBottom sx={{ maxWidth: '650px', mx: 'auto', mb: 4 }}>
-      Empowering patients to take control of their health journey.
+      Empowering patients to take control of their health journey
     </Typography>
     <Button
       variant="contained"
@@ -233,21 +262,35 @@ export default function Home() {
 
         <Container maxWidth="lg">
           <Box sx={{ my: 8 }}>
-            <Typography variant="h3" gutterBottom textAlign="center" color="primary" mb={5}>
-              Features
-            </Typography>
+
+          <>
+      {darkMode ? (
+        <CoolEffectTypography gutterBottom textAlign="center">
+          Features
+        </CoolEffectTypography>
+      ) : (
+        <CoolEffectTypography2 gutterBottom textAlign="center">
+          Features
+        </CoolEffectTypography2>
+      )}
+    </>
             
             <Grid container spacing={8}>
               {[
                  { icon: <DevicesIcon />, title: "AI-Powered Clinical Trial Matching", description: "Personalized matching and real-time updates on new clinical trials." },
-                 { icon: <PsychologyIcon />, title: "Simplified Medical Information", description: "Use NLP to rewrite complex medical information into easy-to-understand language tailored to each patient’s literacy level." },
-                 { icon: <MenuBookIcon />, title: "Educational Resources", description: "Develop educational content, including articles, videos, and infographics, to help patients understand their diagnosis, treatment options, and the clinical trial process." },
+                 { icon: <PsychologyIcon />, title: "Simplified Medical Information", description: "We use NLP to rewrite complex medical information into easy-to-understand language tailored to each patient’s literacy level." },
+                 { icon: <MenuBookIcon />, title: "Educational Resources", description: "We develop educational content, including articles, and infographics, to help patients understand their diagnosis, treatment options, and the clinical trial process." },
                  { icon: <DashboardIcon />, title: "Health Data Dashboard", description: "A personalized dashboard to track health data, clinical trial participation, and educational resources." },
                  { icon: <AssistantIcon />, title: "Virtual Health Assistant", description: "A virtual assistant to answer patient queries, provide reminders for medication and appointments, and offer support throughout their health journey." },
                  { icon: <UpdateIcon />, title: "Real-Time Updates", description: "Provide updates on new clinical trials as they become available, ensuring patients have access to the latest opportunities." },
              ].map((feature, index) => (
                 <Grid item xs={12} md={4} key={index}>
-                  <Card elevation={5} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <Card elevation={5} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',  transition: 'transform 0.3s ease', 
+                      '&:hover': { 
+                        transform: 'scale(1.05)', // Slightly increase the size on hover
+                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', // Add a shadow effect on hover
+                      },
+                      cursor: 'pointer' }}>
                     <CardContent sx={{ textAlign: 'center', p: 3 }}>
                       <Box sx={{ fontSize: 50, color: 'primary.main', mb: 2 }}>
                         {feature.icon}
@@ -266,10 +309,25 @@ export default function Home() {
           </Box>
 
           <Box sx={{ my: 12, textAlign: "center" }}>
-            <Typography variant="h3" gutterBottom color="primary" mb={6}>Pricing</Typography>
+          <>
+      {darkMode ? (
+        <CoolEffectTypography variant="h3" gutterBottom textAlign="center">
+          Pricing
+        </CoolEffectTypography>
+      ) : (
+        <CoolEffectTypography2 variant="h3" gutterBottom textAlign="center">
+          Pricing
+        </CoolEffectTypography2>
+      )}
+    </>
             <Grid container spacing={4} justifyContent="center">
-              <Grid item xs={12} md={6}>
-                <Card elevation={3}>
+              <Grid item xs={12} md={7}>
+                <Card elevation={3} sx={{ transition: 'transform 0.3s ease', 
+                  '&:hover': { 
+                    transform: 'scale(1.05)', // Slightly increase the size on hover
+                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', // Add a shadow effect on hover
+                  },
+                  cursor: 'pointer' }}>
                   <CardContent sx={{ p: 4 }}>
                     <Typography variant="h5" gutterBottom fontWeight="bold">
                       Subscription Plan
@@ -277,8 +335,8 @@ export default function Home() {
                     <Typography variant="h4" gutterBottom color="primary" sx={{ my: 3 }}>
                       $5 <Typography component="span" variant="subtitle1">/ month</Typography>
                     </Typography>
-                    <Typography sx={{ mb: 1, minHeight: '60px' }}>
-                      Access personalized clinical trial matches and additional resources.
+                    <Typography sx={{ mb: 3, minHeight: '60px' }}>
+                    Access personalized clinical trial matches, connect with medical healthcare providers, receive real-time notifications about medical trials, and explore additional resources.
                     </Typography>
                     <Button
                       variant="contained"

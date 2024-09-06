@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { Container, Typography, TextField, Button, Paper, Box, Grid, CssBaseline } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { useRouter } from 'next/navigation'; // Import useRouter for navigation
+import { useRouter } from 'next/navigation'; 
 
 const theme = createTheme({
     palette: {
         background: {
-            default: '#000000', // Set the background color to black
+            default: '#000000', 
         },
         text: {
-            primary: '#FFFFFF', // White text color
+            primary: '#FFFFFF', 
         },
     },
 });
@@ -28,7 +28,7 @@ export default function PatientData() {
         const newDetail = { name, healthCondition, pastSurgeries, diagnosis };
         setPatientDetails([...patientDetails, newDetail]);
 
-        // Clear the input fields after submission
+      
         setName('');
         setHealthCondition('');
         setPastSurgeries('');

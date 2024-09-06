@@ -1,8 +1,6 @@
-// Dashboard.js
 'use client'
-// Dashboard.js
 import { useState } from 'react';
-import { useRouter } from 'next/navigation'; // Always use this import for useRouter
+import { useRouter } from 'next/navigation'; 
 import { useUser } from '@clerk/nextjs';
 
 import {
@@ -26,7 +24,6 @@ import {
   CardContent,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import LogoutIcon from '@mui/icons-material/Logout';
 import StudyIcon from '@mui/icons-material/Book'; // This should be an actual icon from @mui/icons
 
@@ -40,7 +37,7 @@ const theme = createTheme({
     },
     background: {
       default: '#121212',
-      paper: '#424242',
+      paper: '#333', // Changed to a darker shade for a more cohesive color scheme
     },
     
   },
@@ -74,18 +71,15 @@ export default function Dashboard() {
 
   const drawer = (
     <div>
-      <Toolbar > 
-
-      <Typography variant="h5" sx={{mr:1, }}>
-      {user ? `${user.firstName || ' '}` : ' '}  
-            </Typography>
-
-            <Typography variant="h5" >
-      {user ? `${user.lastName || 'there'}` : ' '}
-            </Typography>
-
+      <Toolbar> 
+        <Typography variant="h5" sx={{mr:1, fontWeight: 'bold',  }}>
+          {user ? `${user.firstName || ' '}` : ' '}  
+        </Typography>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', }}>
+          {user ? `${user.lastName || ''}` : ' '}
+        </Typography>
       </Toolbar>
-      <List sx={{borderTop: '1px solid #FFF'}}>
+      <List sx={{borderTop: '1px solid #FFF',}}>
         {[
           { text: 'Home', icon: <HomeIcon />, onClick: () => router.push('/') },
           { text: 'Logout', icon: <LogoutIcon />, onClick: () => router.push('/') },
@@ -105,8 +99,21 @@ export default function Dashboard() {
       <Box sx={{ display: 'flex', backgroundColor:"" }}>
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, width: `calc(100% - ${drawerWidth}px)`,  backgroundColor: '#00A36C', }}>
           <Toolbar>
-            <Typography variant="h5" noWrap component="div">
-             Dashboard
+            <Typography 
+              variant="h5" 
+              noWrap 
+              component="div" 
+              sx={{ 
+                fontWeight: 'bold', 
+                color: '#000000', 
+                letterSpacing: '0.5px', 
+                textTransform: 'uppercase', 
+                mb: 2,
+                mt: 2,
+                fontSize: '1.5rem', 
+              }}
+            >
+              Dashboard
             </Typography>
           </Toolbar>
         </AppBar>
@@ -126,10 +133,22 @@ export default function Dashboard() {
             {/* Example cards for different sections */}
             {[
               { title: 'Patient Data', description: 'View and manage patient data.', link: '/patientdata' },
-              { title: 'Clinical Trials', description: 'Access and get live update clinical trials.', link: '/generate' },
+              { title: 'Clinical Trials', description: 'Access and get live updates of clinical trials.', link: '/generate' },
             ].map((card, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card>
+                <Card 
+                  sx={{ 
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease', 
+                    '&:hover': { 
+                      transform: 'scale(1.05)', 
+                      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', 
+                      backgroundColor: '#1a1a1a', // Slightly change background color on hover
+                    },
+                    cursor: 'pointer', // Change the cursor to pointer for better UX
+                    backgroundColor: '#2d2d2d', // Set a consistent background color
+                    color: '#ffffff', // Ensure text color contrasts with the background
+                  }}
+                >
                   <CardActionArea onClick={() => router.push(card.link)}>
                     <CardContent>
                       <Typography gutterBottom variant="h5" component="div">

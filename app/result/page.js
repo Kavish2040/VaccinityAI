@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Container, CircularProgress, Typography, Box } from "@mui/material";
+import { Container, CircularProgress, Typography, Box , Button} from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import getStripe from "../../utils/get-stripe";
 
@@ -52,6 +52,13 @@ const ResultPage = () => {
         <Typography variant="h6" color="error">
           {error}
         </Typography>
+                      <Button
+                        variant="contained"
+                        onClick={() => router.push('/')}
+                        sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
+                    >
+                        HOME
+                    </Button>
       </Container>
     );
   }

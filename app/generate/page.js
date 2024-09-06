@@ -1,5 +1,5 @@
 "use client";
-import { Container, Grid, Card, Typography, Paper, TextField, Button, CardContent, CircularProgress, Box, Dialog, DialogTitle, DialogContent, DialogContentText, CssBaseline } from '@mui/material';
+import { Container, Typography, Paper, Dialog, DialogTitle, DialogContent, DialogContentText,  TextField, Button, CircularProgress, Box, CssBaseline, List, ListItem, ListItemText, Switch, FormControlLabel } from '@mui/material';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -12,6 +12,7 @@ const theme = createTheme({
         },
         text: {
             primary: '#FFFFFF',
+            secondary: '#FFA500'
         },
     },
 });
@@ -24,9 +25,9 @@ export default function Generate() {
     const [location, setLocation] = useState('');
     const [intervention, setIntervention] = useState('');
     const [loading, setLoading] = useState(false);
-    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedStudy, setSelectedStudy] = useState(null); // Track selected study
+    const [showSimplified, setShowSimplified] = useState(true); // Track toggle status
     const [openModal, setOpenModal] = useState(true);
-    const studiesPerPage = 6;
     const router = useRouter();
 
     const handleTextChange = (event) => setText(event.target.value);
@@ -34,61 +35,76 @@ export default function Generate() {
     const handleLocationChange = (event) => setLocation(event.target.value);
     const handleInterventionChange = (event) => setIntervention(event.target.value);
 
+    // Extract and structure the data returned from the API
+    const extractAndStructureData = (data) => {
+        return data.studies.map(study => {
+            const lines = study.split('\n');
+            return {
+                originalTitle: lines.find(line => line.startsWith('1. Original Title:')).split(': ')[1],
+                simplifiedTitle: lines.find(line => line.startsWith('2. Simplified Title:')).split(': ')[1],
+                originalDescription: lines.find(line => line.startsWith('3. Original Description:')).split(': ')[1],
+                simplifiedDescription: lines.find(line => line.startsWith('4. Simplified Description:')).split(': ')[1],
+                participants: lines.find(line => line.startsWith('5. Number of Participants:')).split(': ')[1],
+                minimumAge: lines.find(line => line.startsWith('6. Minimum Age:')).split(': ')[1],
+                leadSponsor: lines.find(line => line.startsWith('7. Lead Sponsor:')).split(': ')[1],
+            };
+        });
+    };
+
     const handleSubmit = async () => {
         setLoading(true);
-        
-        // Prepare the request body
         const bodyContent = { text, age, location, intervention };
-    
+
         try {
-            // Make the API request
             const response = await fetch('/api/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyContent),
             });
-    
-            // Check if the response is OK (status in the range 200-299)
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-    
-            // Parse the JSON response
+
             const data = await response.json();
-    
-            // Update state with the studies received
-            setStudies(data.studies || []);
-            setCurrentPage(1); // Reset to the first page
+            const structuredData = extractAndStructureData(data);
+            setStudies(structuredData);
+            setSelectedStudy(null); // Reset the selected study on new search
         } catch (error) {
             console.error('Error fetching studies:', error);
-            setStudies([]); // Clear studies in case of an error
+            setStudies([]);
         } finally {
-            setLoading(false); // Stop loading regardless of success or failure
+            setLoading(false); 
         }
     };
 
     const handleCloseModal = () => setOpenModal(false);
 
-    // Calculate the visible studies based on pagination
-    const indexOfLastStudy = currentPage * studiesPerPage;
-    const indexOfFirstStudy = indexOfLastStudy - studiesPerPage;
-    const currentStudies = studies.slice(indexOfFirstStudy, indexOfLastStudy);
+    const handleStudyClick = (study) => {
+        setSelectedStudy(study);
+    };
+
+    const handleToggleChange = () => {
+        setShowSimplified(!showSimplified); // Toggle between simplified and original view
+    };
 
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <Container maxWidth="lg" sx={{ minHeight: '100vh', py: 3, backgroundColor: '#000000' }}>
-                <Dialog open={openModal} onClose={handleCloseModal} sx={{ '& .MuiPaper-root': { backgroundColor: '#333', color: 'white' } }}>
+
+            <Dialog open={openModal} onClose={handleCloseModal} sx={{ '& .MuiPaper-root': { backgroundColor: '#333', color: 'white' } }}>
                     <DialogTitle>{"How to Use This Page"}</DialogTitle>
                     <DialogContent>
                         <DialogContentText sx={{ color: 'white' }}>
-                            Enter details about the disease or condition, patient age, preferred location, and intervention/treatment to find relevant studies. Click 'Search Study' to display results. Navigate using 'Previous' and 'Next' buttons.
+                            Enter details about the disease or condition, patient age, preferred location, and intervention/treatment to find relevant studies. Click 'Search Study' to display results. Navigate using the scroller on the side.
                         </DialogContentText>
                     </DialogContent>
                     <Button onClick={handleCloseModal} color="primary">
                         Close
                     </Button>
                 </Dialog>
+
                 <Box sx={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -99,7 +115,7 @@ export default function Generate() {
                     boxShadow: '0px 3px 10px rgba(255, 255, 255, 0.2)',
                     borderRadius: '8px'
                 }}>
-                    <Typography variant="h4" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
                         Generate Study Details
                     </Typography>
                     <Button
@@ -110,6 +126,8 @@ export default function Generate() {
                         Dashboard
                     </Button>
                 </Box>
+
+                {/* Search Form */}
                 <Paper elevation={3} sx={{ p: 4, mb: 5, borderRadius: '8px', backgroundColor: '#1f1d1d', color: 'white' }}>
                     <TextField
                         value={text}
@@ -122,22 +140,12 @@ export default function Generate() {
                         variant="outlined"
                         sx={{
                             mb: 2,
-                            '& .MuiInputBase-input': {
-                                color: 'white', // sets the text color inside the input
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'white', // sets the label color
-                            },
+                            '& .MuiInputBase-input': { color: 'white' },
+                            '& .MuiInputLabel-root': { color: 'white' },
                             '& .MuiOutlinedInput-root': {
-                                '& fieldset': {
-                                    borderColor: 'white', // sets the border color
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'white', // enhances the border color on hover
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'white', // sets the border color on focus to green or any color that fits your theme
-                                },
+                                '& fieldset': { borderColor: 'white' },
+                                '&:hover fieldset': { borderColor: 'white' },
+                                '&.Mui-focused fieldset': { borderColor: 'white' },
                             }
                         }}
                     />
@@ -155,15 +163,9 @@ export default function Generate() {
                             '& .MuiInputBase-input': { color: 'white' },
                             '& .MuiInputLabel-root': { color: 'white' },
                             '& .MuiOutlinedInput-root': {
-                                '& fieldset': {
-                                    borderColor: 'white', // Default border color
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'white', // Border color on hover
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'white', // Border color on focus
-                                },
+                                '& fieldset': { borderColor: 'white' },
+                                '&:hover fieldset': { borderColor: 'white' },
+                                '&.Mui-focused fieldset': { borderColor: 'white' },
                             }
                         }}
                     />
@@ -179,15 +181,9 @@ export default function Generate() {
                             '& .MuiInputBase-input': { color: 'white' },
                             '& .MuiInputLabel-root': { color: 'white' },
                             '& .MuiOutlinedInput-root': {
-                                '& fieldset': {
-                                    borderColor: 'white',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'white',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'white',
-                                },
+                                '& fieldset': { borderColor: 'white' },
+                                '&:hover fieldset': { borderColor: 'white' },
+                                '&.Mui-focused fieldset': { borderColor: 'white' },
                             }
                         }}
                     />
@@ -203,15 +199,9 @@ export default function Generate() {
                             '& .MuiInputBase-input': { color: 'white' },
                             '& .MuiInputLabel-root': { color: 'white' },
                             '& .MuiOutlinedInput-root': {
-                                '& fieldset': {
-                                    borderColor: 'white',
-                                },
-                                '&:hover fieldset': {
-                                    borderColor: 'white',
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: 'white',
-                                },
+                                '& fieldset': { borderColor: 'white' },
+                                '&:hover fieldset': { borderColor: 'white' },
+                                '&.Mui-focused fieldset': { borderColor: 'white' },
                             }
                         }}
                     />
@@ -226,45 +216,166 @@ export default function Generate() {
                     </Button>
                 </Paper>
 
-                {currentStudies.length > 0 && (
-                    <Grid container spacing={3}>
-                        {currentStudies.map((study, index) => (
-                            <Grid item xs={12} sm={6} md={4} key={index}>
-                                <Card raised sx={{ height: '100%', display: 'flex', flexDirection: 'column', p: 3, borderRadius: '8px', backgroundColor: '#333', boxShadow: '0 4px 8px rgba(0,0,0,0.15)', color: 'white' }}>
-                                    <CardContent>
-                                        <Typography variant="body1" style={{ whiteSpace: 'pre-line', fontSize: '0.9rem' }}>
-                                            {study}
+                {/* Study List and Details - LinkedIn Style */}
+                <Box sx={{ display: 'flex', flexDirection: 'row', height: '80vh' }}>
+                    {/* Left Side - Study List */}
+                    <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '8px', backgroundColor: '#1f1d1d', color: 'white', overflowY: 'scroll' }}>
+                        <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>Clinical Trials List</Typography>
+                        <List>
+                            {studies.map((study, index) => (
+                                <ListItem button key={index} onClick={() => handleStudyClick(study)} sx={{ borderBottom: '1px solid white', mb:2}}>
+                                    <ListItemText
+                                        primary={study.simplifiedTitle}
+                                        secondary={`Participants: ${study.participants},  Min Age: ${study.minimumAge}`}
+                                        sx={{ color: 'white' }}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    </Paper>
+
+                    {/* Right Side - Study Details */}
+                    <Paper 
+                        elevation={3} 
+                        sx={{ 
+                            flex: 2, 
+                            p: 3, 
+                            ml: 3, 
+                            borderRadius: '12px', 
+                            background: 'linear-gradient(145deg, #222, #1b1b1b)', 
+                            color: 'white', 
+                            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)', 
+                            overflowY: 'scroll', 
+                            transition: 'transform 0.3s ease, box-shadow 0.3s ease', 
+                            '&:hover': { 
+                                transform: 'scale(1.02)',
+                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+                            },
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Switch 
+                                        checked={showSimplified} 
+                                        onChange={handleToggleChange} 
+                                        color="success"
+                                    />
+                                }
+                                label={showSimplified ? "Show Original" : "Show Simplified"}
+                                sx={{ color: '#FFFFFF' }}
+                            />
+                            <Button 
+                                variant="contained" 
+                                color="warning" 
+                                sx={{ 
+                                    fontWeight: 'bold',
+                                    textTransform: 'none',
+                                    backgroundColor: 'green',
+                                    '&:hover': { backgroundColor: '#E68A00' }
+                                }}
+                                onClick={() => router.push('/apply')}
+                            >
+                                Apply
+                            </Button>
+                        </Box>
+
+                        {selectedStudy ? (
+                            <>
+                                {showSimplified ? (
+                                    <>
+                                        <Typography 
+                                            variant="h5" 
+                                            sx={{ 
+                                                mb: 2, 
+                                                color: '#E0E0E0', 
+                                                fontWeight: 'bold', 
+                                                fontSize: '1.5rem' 
+                                            }}
+                                        >
+                                            Simplified Title: {selectedStudy.simplifiedTitle}
                                         </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-                )}
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    mt: 4,
-                    pt: 2,
-                    width: '100%',
-                    borderTop: '1px solid #FFF'
-                }}>
-                    <Button
-                        variant="outlined"
-                        onClick={() => setCurrentPage(prevPage => Math.max(prevPage - 1, 1))}
-                        disabled={currentPage === 1}
-                        sx={{ mr: 1, color: 'white', borderColor: 'white' }}
-                    >
-                        Previous
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        onClick={() => setCurrentPage(prevPage => prevPage + 1)}
-                        disabled={currentPage * studiesPerPage >= studies.length}
-                        sx={{ color: 'white', borderColor: 'white' }}
-                    >
-                        Next
-                    </Button>
+
+                                        <Typography 
+                                            variant="body1" 
+                                            sx={{ 
+                                                mb: 2, 
+                                                color: '#CFD8DC' 
+                                            }}
+                                        >
+                                            <strong>Simplified Description:</strong> {selectedStudy.simplifiedDescription}
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Typography 
+                                            variant="h5" 
+                                            sx={{ 
+                                                mb: 2, 
+                                                color: '#E0E0E0', 
+                                                fontWeight: 'bold', 
+                                                fontSize: '1.5rem' 
+                                            }}
+                                        >
+                                            Original Title: {selectedStudy.originalTitle}
+                                        </Typography>
+
+                                        <Typography 
+                                            variant="body1" 
+                                            sx={{ 
+                                                mb: 2, 
+                                                color: '#CFD8DC' 
+                                            }}
+                                        >
+                                            <strong>Original Description:</strong> {selectedStudy.originalDescription}
+                                        </Typography>
+                                    </>
+                                )}
+
+                                <Typography 
+                                    variant="body1" 
+                                    sx={{ 
+                                        mb: 2, 
+                                        color: '#90A4AE' 
+                                    }}
+                                >
+                                    <strong>Minimum Age:</strong> {selectedStudy.minimumAge}
+                                </Typography>
+                                
+                                <Typography 
+                                    variant="body1" 
+                                    sx={{ 
+                                        mb: 2, 
+                                        color: '#90A4AE' 
+                                    }}
+                                >
+                                    <strong>Participants:</strong> {selectedStudy.participants}
+                                </Typography>
+
+                                <Typography 
+                                    variant="body1" 
+                                    sx={{ 
+                                        mb: 2, 
+                                        color: '#90A4AE' 
+                                    }}
+                                >
+                                    <strong>Lead Sponsor:</strong> {selectedStudy.leadSponsor}
+                                </Typography>
+                            </>
+                        ) : (
+                            <Typography 
+                                variant="body1" 
+                                sx={{ 
+                                    color: 'white', 
+                                    fontWeight: 'bold',
+                                    fontSize: '1.2rem',
+                                    textAlign: 'center', 
+                                }}
+                            >
+                                Select a study to see more details.
+                            </Typography>
+                        )}
+                    </Paper>
                 </Box>
             </Container>
         </ThemeProvider>
