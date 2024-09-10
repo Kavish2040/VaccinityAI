@@ -3,14 +3,18 @@ import OpenAI from 'openai';
 import fetch from 'node-fetch';
 
 const systemPrompt = `For each medical study, present the information in a simplified and non-repetitive format. Detail the study name and description initially in their original form followed by a simplified version. Only include those study that match the user condition, min age, and location preference. Format as follows:
-1. Original Title: [Insert original title] 
-2. Simplified Title: [Insert simplified title explaining all medical terms, chemical formulas, devices, or hormones present. Don’t change any meanings, just provide simplified explanation for each term]
-3. Original Description: [Insert original description]
-4. Simplified Description: [Insert simplified description, clarifying all medical terms, chemical formulas, devices, or hormones. Give a very in-depth explanation]
-5. Number of Participants: [Insert number]
-6. Minimum Age: [Insert age]
-7. Lead Sponsor: [Insert sponsor] 
-Ensure that there is a line space between each subtitle and maintain a consistent output format for each study without using separators like '---' between sections. Place the title information before the description for both original and simplified versions, and ensure space between the original and simplified titles and descriptions.`;
+1. Original Title -> [Insert original title] 
+2. Simplified Title -> [Insert simplified title explaining all medical terms, chemical formulas, devices, or hormones present. Don’t change any meanings, just provide simplified explanation for each term]
+3. Original Description -> [Insert original description]
+4. Simplified Description -> [Insert simplified description, clarifying all medical terms, chemical formulas, devices, or hormones. Give a very in-depth explanation]
+5. Number of Participants -> [Insert number]
+6. Minimum Age -> [Insert age]
+7. Lead Sponsor -> [Insert sponsor] 
+8. Eligibility Criteria -> Give both eligibility and ineligibility requirements. Dont seperate them by a newline
+9. Location -> Mention location of sponsore, facility, including coountry, zip code, city, and geopoint. if recieving multiple locations in text group all of them together without new line and return
+Ensure that there is a line space between each subtitle even after the last 9. line and maintain a consistent output format for each study without using separators like '---' between sections. Place the title information before the description for both original and simplified versions, and ensure space between the original and simplified titles and descriptions.
+
+`;
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
@@ -80,8 +84,8 @@ async function simplifyDisease(text) {
 }
 
 export async function POST(req) {
-    let count = 1; // Initialize count inside the function
-    let seenStudies = new Set(); // Reset seen studies for each request
+    let count = 1;
+    let seenStudies = new Set(); 
 
     try {
         const requestBody = await req.text();
@@ -118,12 +122,15 @@ export async function POST(req) {
                     studyDescription: protocolSection.descriptionModule.briefSummary,
                     number: protocolSection.designModule?.enrollmentInfo?.count || "Not specified",
                     minimumAge: minimumAge,
-                    leadSponsor: protocolSection.sponsorCollaboratorsModule?.leadSponsor?.name || "Not specified"
+                    leadSponsor: protocolSection.sponsorCollaboratorsModule?.leadSponsor?.name || "Not specified",
+                    eligibilityCriteria: protocolSection.eligibilityModule?.eligibilityCriteria || "Not specified",
+                    locations: protocolSection.contactsLocationsModule?.locations || "Not specified"
                 });
 
                 count += 1;
                 const simplifiedText = await simplifyText(studyDetails);
                 allSimplifiedTexts.push(simplifiedText);
+                console.log(simplifiedText)
             }
         }
 

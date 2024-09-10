@@ -1,103 +1,130 @@
 'use client';
+import React, { useState, useEffect } from 'react';
 import Image from "next/image";
 import getStripe from '@/utils/get-stripe';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import {
-  Container, Typography, AppBar, Toolbar, Button, Box, Grid, Paper, ThemeProvider, createTheme, CssBaseline, Card, CardContent, Stack, Switch
+  Container,
+  Typography,
+  AppBar,
+  Toolbar,
+  Button,
+  Box,
+  Grid,
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  Card,
+  CardContent,
+  Stack,
+  Switch,
+  Modal,
+  Fade,
+  Backdrop
 } from '@mui/material';
+import { motion } from 'framer-motion';
 import Head from 'next/head';
 import { useRouter } from "next/navigation";
-import { useState } from 'react';
-import Typewriter from './Typewriter'; // Import the Typewriter component
-import { LocalHospital as StethoscopeIcon } from '@mui/icons-material';
-import { Devices as DevicesIcon, Psychology as PsychologyIcon, MenuBook as MenuBookIcon, Dashboard as DashboardIcon, Assistant as AssistantIcon, Update as UpdateIcon } from '@mui/icons-material';
 import { useUser } from '@clerk/nextjs';
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import { styled } from '@mui/material/styles';
-
-// Import all necessary icons
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
+import { Devices, Psychology, MenuBook, Dashboard, Assistant, Update } from '@mui/icons-material';
 
+const AnimatedTypography = ({ text, delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.8, delay }}
+  >
+    <Typography variant="h1" component="h2" gutterBottom>
+      {text}
+    </Typography>
+  </motion.div>
+);
 
-
+const FeatureCard = ({ icon, title, description }) => (
+  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+    <Card elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 4, overflow: 'hidden' }}>
+      <CardContent sx={{ textAlign: 'center', p: 4 }}>
+        <Box sx={{ color: 'primary.main', mb: 2, fontSize: 48 }}>
+          {icon}
+        </Box>
+        <Typography variant="h5" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
+          {title}
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          {description}
+        </Typography>
+      </CardContent>
+    </Card>
+  </motion.div>
+);
 
 export default function Home() {
   const router = useRouter();
   const { user } = useUser();
   const [darkMode, setDarkMode] = useState(true);
-  const [showIcon, setShowIcon] = useState(false);
+  const [openModal, setOpenModal] = useState(false);
 
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: '#2196f3',
+        main: '#8C52FF',
       },
       secondary: {
-        main: '#21CBF3',
+        main: '#FF5E84',
+      },
+      background: {
+        default: darkMode ? '#121212' : '#F4F6F8',
+        paper: darkMode ? '#1E1E1E' : '#FFFFFF',
       },
     },
     typography: {
-      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: '"Poppins", "Roboto", "Helvetica", "Arial", sans-serif',
+      h1: {
+        fontWeight: 800,
+        fontSize: '4rem',
+      },
       h2: {
         fontWeight: 700,
+        fontSize: '3rem',
       },
-      h4: {
-        fontWeight: 500,
-      },
-      poster: {
-        fontSize: '2rem',
-        color: 'red',
+      h5: {
+        fontWeight: 600,
       },
     },
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
-            borderRadius: 8,
+            borderRadius: 30,
             textTransform: 'none',
             fontWeight: 600,
+            padding: '12px 24px',
           },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 12,
+            borderRadius: 16,
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.15)',
           },
         },
       },
     },
   });
-   
-  const CoolEffectTypography = styled(Typography)(({ theme }) => ({
-    
-    color: theme.palette.secondary.light, // A lighter color for better visibility
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
-    textShadow: '2px 2px 6px #ffffff', // Brighter shadow for contrast
-    fontSize: '2.5rem',
-    letterSpacing: '3px',
-    background: '-webkit-linear-gradient(45deg, #FFFFFF 30%, #CCCCCC 90%)', // Lighter gradient
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    margin: '40px 0'
+
+  const GradientBox = styled(Box)(({ theme }) => ({
+    background: 'linear-gradient(135deg, #EBF5FF 0%, #4A90E2 100%)', // Lighter blue transitioning to a darker blue
+    padding: theme.spacing(12, 0),
+    borderRadius: '0 0 50% 50% / 4%',
+    textAlign: 'center',
+    color: 'white',
   }));
-
-  const CoolEffectTypography2 = styled(Typography)(({ theme }) => ({
-    color: theme.palette.primary.dark, // Darker color for better visibility on white background
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
-    fontSize: '2.5rem',
-    letterSpacing: '3px',
-    background: '-webkit-linear-gradient(45deg, #000000 30%, #666666 90%)', // Darker gradient for a striking effect
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent', // Maintain transparent text fill to let the gradient show through
-    margin: '40px 0'
-}));
-
+  
 
   const handleCheckout = async () => {
     const checkoutSession = await fetch('/api/checkout_session', {
@@ -125,235 +152,224 @@ export default function Home() {
       <CssBaseline />
       <Container maxWidth={false} disableGutters>
         <Head>
-          <title>Vaccinity AI - Empowering Patient Care</title>
-          <meta name="description" content="Vaccinity AI leverages advanced AI technology to match patients with suitable clinical trials and simplifies complex medical information." />
+          <title>VaccinityAI - Empowering Patient Care</title>
+          <meta name="description" content="VaccinityAI leverages advanced AI technology to match patients with suitable clinical trials and simplifies complex medical information." />
+          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
         </Head>
 
-
-        <AppBar
-            position="sticky"
-            style={{
-                background: 'black',
-                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.5)',
-                borderRadius: '1px',
-            }}
-            elevation={2}
-        >
-            <Toolbar>
-                <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' , mb:-1.25}}>
-                    <Image src="/logo1.png" alt="Vaccinity AI Logo" width={205} height={100}  />
-                </Box>
-                
-                <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', mr: 3 }}>
-                <Button color="inherit" onClick={() => router.push('/')}>
-                    HOME
-                </Button>
-                <Typography sx={{ mx: 2 }}>|</Typography> {/* Separator */}
-                <Button color="inherit" onClick={() => router.push('/dashboard')}>
-                    DASHBOARD
-                </Button>
-                <Typography sx={{ mx: 2 }}>|</Typography> {/* Separator */}
-
-                <SignedOut>
-                    <Button color="inherit" onClick={() => router.push('/sign-up')}>
-                        SIGN UP
-                    </Button>
-                </SignedOut>
-                <SignedIn>
-                    <UserButton />
-                </SignedIn>
+        <AppBar position="fixed" color="transparent" elevation={0} sx={{ backdropFilter: 'blur(10px)'}}>
+          <Toolbar sx={{mb:-2}}>
+            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+              <Image src="/logo1.png" alt="VaccinityAI Logo" width={205} height={110} />
             </Box>
+            <Stack
+              direction="row"
+              spacing={3} // Increase spacing for better balance
+              alignItems="center"
+              sx={{
+                '& button': {
+                  fontSize: '1rem', // Adjust font size for modern typography
+                  fontWeight: '600', // Bold text for stronger visual emphasis
+                  padding: '8px 16px', // Adjust padding for more clickable space
+                  transition: 'all 0.3s ease-in-out', // Smooth hover transitions
+                  '&:hover': {
+                    transform: 'translateY(-2px)', // Lift effect on hover for interactivity
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)', // Subtle shadow for depth
+                  },
+                },
+                '& .MuiSwitch-root': {
+                  '& .MuiSwitch-thumb': {
+                    width: 28, // Enlarge the thumb for a more tactile feel
+                    height: 28, // Make the switch bigger
+                  },
+                  '& .MuiSwitch-track': {
+                    borderRadius: 20, // Softer corners for the switch track
+                    opacity: 1,
+                    backgroundColor: darkMode ? '#424242' : '#e0e0e0', // Adjust based on dark mode
+                  },
+                },
+                '& .MuiSwitch-root:hover': {
+                  transform: 'scale(1.05)', // Subtle scale effect on hover
+                },
+              }}
+            >
+              <Button color="inherit" onClick={() => router.push('/')}>
+                Home
+              </Button>
+              <Button color="inherit" onClick={() => router.push('/dashboard')}>
+                Dashboard
+              </Button>
+              <SignedOut>
+                <Button color="primary"   onClick={() => router.push('/sign-up')} variant="contained" sx={{ borderRadius: 30 } }>
+                  Sign Up
+                </Button>
+              </SignedOut>
+              <SignedIn>
+                <UserButton />
+              </SignedIn>
+              <Switch
+                  checked={darkMode}
+                  onChange={() => setDarkMode(!darkMode)}
+                  icon={<LightModeOutlinedIcon sx={{ color: '#000000' }} />}  // Yellow sun for light mode
+                  checkedIcon={<DarkModeOutlinedIcon sx={{ color: '#fff' }} />}  // Purple moon for dark mode
+                  sx={{
+                    '& .MuiSwitch-switchBase': {
+                      '&.Mui-checked': {
+                        color: '#FFFFFF',  // Thumb color when checked (dark mode)
+                        '& + .MuiSwitch-track': {
+                          backgroundColor: '#424242',  // Track color for dark mode
+                        },
+                      },
+                    },
+                    '& .MuiSwitch-track': {
+                      borderRadius: 22 / 2,  // Round track
+                      backgroundColor: '#B0BEC5',  // Light mode track color
+                      opacity: 1,
+                      transition: 'background-color 0.3s',  // Smooth transition on track color change
+                    },
+                    '& .MuiSwitch-thumb': {
+                      width: 24,  // Larger thumb size
+                      height: 24,
+                      backgroundColor: darkMode ? '#9C27B0' : '#FFD700',  // Thumb color based on mode
+                      boxShadow: '0 0 8px rgba(0, 0, 0, 0.2)',  // Add shadow to thumb
+                    },
+                  }}
+                />
 
-                <LightModeOutlinedIcon style={{ color: '#FFFFFF', marginRight: '1px' }} />
-                    <Switch
-                        checked={darkMode}
-                        onChange={() => setDarkMode(!darkMode)}
-                        color="default"
-                        inputProps={{ 'aria-label': 'toggle dark mode' }}
-                    />
-                    <DarkModeOutlinedIcon style={{ color: '#FFFFFF', marginLeft: '1px' }} />
-            </Toolbar>
+            </Stack>
+
+          </Toolbar>
         </AppBar>
 
-
-
-
-<Box sx={{
-  textAlign: "center",
-  py: 12,
-  background: 'linear-gradient(45deg, #4D1979 30%, #FF0066 90%)', // Deep purple to magenta gradient
-  color: 'white',
-  borderRadius: { xs: 0, sm: 2 },
-  mx: { xs: 0, sm: 2 },
-  my: 4,
-  boxShadow: '0 3px 5px 2px rgba(77, 25, 121, 0.3)', // Adjusted shadow to match the new gradient colors
-}}>
-  <SignedIn>
-    <Typography variant="h2" gutterBottom>
-    {user ? `Hey ${user.firstName || 'there'},  ` : ' '}
-      Welcome to <span style={{
-        background: 'linear-gradient(90deg, #EE9CA7 , #FFDDE1)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        fontFamily: 'cursive, sans-serif',
-        fontWeight: 'bold'
-      }}>
-        <Typewriter text="VaccinityAI"/>
-      </span>
-    </Typography>
-    <Typography variant="h5" gutterBottom sx={{ maxWidth: '655px', mx: 'auto', mb: 4 }}>
-      Empowering patients to take control of their health journey
-    </Typography>
-    <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 4 }}>
-      <Button
-        variant="contained"
-        size="large"
-        sx={{
-          py: 1.5,
-          px: 4,
-          fontSize: '1.1rem',
-          backgroundColor: 'white',
-          color: 'primary.main',
-          '&:hover': {
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          }
-        }}
-        onClick={() => router.push('/dashboard')}
-      >
-        Get Started
-      </Button>
-    </Stack>
-  </SignedIn>
-  <SignedOut>
-    <Typography variant="h2" gutterBottom>
-      Welcome to <span style={{
-        background: 'linear-gradient(90deg, #EE9CA7, #FFDDE1)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        fontFamily: 'cursive, sans-serif',
-        fontWeight: 'bold'
-      }}>
-        <Typewriter text="VaccinityAI"/>
-      </span>
-    </Typography>
-    <Typography variant="h5" gutterBottom sx={{ maxWidth: '650px', mx: 'auto', mb: 4 }}>
-      Empowering patients to take control of their health journey
-    </Typography>
-    <Button
-      variant="contained"
-      size="large"
-      sx={{
-        py: 1.5,
-        px: 4,
-        fontSize: '1.1rem',
-        backgroundColor: 'white',
-        color: 'primary.main',
-        '&:hover': {
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        }
-      }}
-      onClick={() => router.push('/sign-in')}
-    >
-      Get Started
-    </Button>
-  </SignedOut>
-</Box>
-
+        <GradientBox>
+          <Container maxWidth="md">
+            <AnimatedTypography text={`Hey ${user?.firstName || 'there'},`} delay={0.2} />
+            <AnimatedTypography text="Welcome to VaccinityAI" delay={0.4} />
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              <Typography variant="h5" gutterBottom sx={{ mb: 4, opacity: 0.9 }}>
+                Empowering patients to take control of their health journey
+              </Typography>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.8 }}
+            >
+              <Button
+              variant="contained"
+              size="large"
+              sx={{
+                py: 2,
+                px: 6,
+                fontSize: '1.2rem',
+                backgroundColor: 'white',
+                color: 'primary.main',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                }
+              }}
+              onClick={() => {
+                if (user) {
+                  router.push('/generate');  // Redirect to the generate page if the user is signed in
+                } else {
+                  setOpenModal(true);  // Redirect to sign-in page if not signed in
+                }
+              }}
+            >
+              Get Started
+            </Button>
+            </motion.div>
+          </Container>
+        </GradientBox>
 
         <Container maxWidth="lg">
-          <Box sx={{ my: 8 }}>
-
-          <>
-      {darkMode ? (
-        <CoolEffectTypography gutterBottom textAlign="center">
-          Features
-        </CoolEffectTypography>
-      ) : (
-        <CoolEffectTypography2 gutterBottom textAlign="center">
-          Features
-        </CoolEffectTypography2>
-      )}
-    </>
-            
-            <Grid container spacing={8}>
+          <Box sx={{ my: 12 }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <Typography variant="h2" gutterBottom textAlign="center" sx={{ mb: 6 }}>
+                Features
+              </Typography>
+            </motion.div>
+            <Grid container spacing={4}>
               {[
-                 { icon: <DevicesIcon />, title: "AI-Powered Clinical Trial Matching", description: "Personalized matching and real-time updates on new clinical trials." },
-                 { icon: <PsychologyIcon />, title: "Simplified Medical Information", description: "We use NLP to rewrite complex medical information into easy-to-understand language tailored to each patient’s literacy level." },
-                 { icon: <MenuBookIcon />, title: "Educational Resources", description: "We develop educational content, including articles, and infographics, to help patients understand their diagnosis, treatment options, and the clinical trial process." },
-                 { icon: <DashboardIcon />, title: "Health Data Dashboard", description: "A personalized dashboard to track health data, clinical trial participation, and educational resources." },
-                 { icon: <AssistantIcon />, title: "Virtual Health Assistant", description: "A virtual assistant to answer patient queries, provide reminders for medication and appointments, and offer support throughout their health journey." },
-                 { icon: <UpdateIcon />, title: "Real-Time Updates", description: "Provide updates on new clinical trials as they become available, ensuring patients have access to the latest opportunities." },
-             ].map((feature, index) => (
+                { icon: <Devices fontSize="large" />, title: "AI-Powered Clinical Trial Matching", description: "Personalized matching and real-time updates on new clinical trials." },
+                { icon: <Psychology fontSize="large" />, title: "Simplified Medical Information", description: "We use NLP to rewrite complex medical information into easy-to-understand language." },
+                { icon: <MenuBook fontSize="large" />, title: "Educational Resources", description: "Access to articles and infographics to help understand diagnoses and treatment options." },
+                { icon: <Dashboard fontSize="large" />, title: "Health Data Dashboard", description: "A personalized dashboard to track health data and clinical trial participation." },
+                { icon: <Assistant fontSize="large" />, title: "Virtual Health Assistant", description: "AI-powered assistant to answer queries and provide support throughout your health journey." },
+                { icon: <Update fontSize="large" />, title: "Real-Time Updates", description: "Stay informed with the latest clinical trial opportunities as they become available." },
+              ].map((feature, index) => (
                 <Grid item xs={12} md={4} key={index}>
-                  <Card elevation={5} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between',  transition: 'transform 0.3s ease', 
-                      '&:hover': { 
-                        transform: 'scale(1.05)', // Slightly increase the size on hover
-                        boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', // Add a shadow effect on hover
-                      },
-                      cursor: 'pointer' }}>
-                    <CardContent sx={{ textAlign: 'center', p: 3 }}>
-                      <Box sx={{ fontSize: 50, color: 'primary.main', mb: 2 }}>
-                        {feature.icon}
-                      </Box>
-                      <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-                        {feature.title}
-                      </Typography>
-                      <Typography variant="body1">
-                        {feature.description}
-                      </Typography>
-                    </CardContent>
-                  </Card>
+                  <FeatureCard {...feature} />
                 </Grid>
               ))}
             </Grid>
           </Box>
 
           <Box sx={{ my: 12, textAlign: "center" }}>
-          <>
-      {darkMode ? (
-        <CoolEffectTypography variant="h3" gutterBottom textAlign="center">
-          Pricing
-        </CoolEffectTypography>
-      ) : (
-        <CoolEffectTypography2 variant="h3" gutterBottom textAlign="center">
-          Pricing
-        </CoolEffectTypography2>
-      )}
-    </>
-            <Grid container spacing={4} justifyContent="center">
-              <Grid item xs={12} md={7}>
-                <Card elevation={3} sx={{ transition: 'transform 0.3s ease', 
-                  '&:hover': { 
-                    transform: 'scale(1.05)', // Slightly increase the size on hover
-                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', // Add a shadow effect on hover
-                  },
-                  cursor: 'pointer' }}>
-                  <CardContent sx={{ p: 4 }}>
-                    <Typography variant="h5" gutterBottom fontWeight="bold">
-                      Subscription Plan
-                    </Typography>
-                    <Typography variant="h4" gutterBottom color="primary" sx={{ my: 3 }}>
-                      $5 <Typography component="span" variant="subtitle1">/ month</Typography>
-                    </Typography>
-                    <Typography sx={{ mb: 3, minHeight: '60px' }}>
-                    Access personalized clinical trial matches, connect with medical healthcare providers, receive real-time notifications about medical trials, and explore additional resources.
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      fullWidth
-                      onClick={handleCheckout}
-                      sx={{ py: 1 }}
-                    >
-                      Choose Plan
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
+            <Typography variant="h2" gutterBottom textAlign="center" sx={{ mb: 6 }}>
+              Start Your Journey
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={handleCheckout}
+              sx={{ py: 2, px: 6, fontSize: '1.2rem' }}
+            >
+              Join VaccinityAI
+            </Button>
           </Box>
         </Container>
+
+        <Modal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          closeAfterTransition
+          BackdropComponent={Backdrop}
+          BackdropProps={{
+            timeout: 500,
+          }}
+        >
+          <Fade in={openModal}>
+            <Box sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 400,
+              bgcolor: 'background.paper',
+              borderRadius: 4,
+              boxShadow: 24,
+              p: 4,
+            }}>
+              <Typography variant="h5" component="h2" gutterBottom>
+                Welcome to VaccinityAI!
+              </Typography>
+              <Typography sx={{ mt: 2 }}>
+                Ready to take control of your health journey? Let's get started by setting up your profile.
+              </Typography>
+              <Button
+                fullWidth
+                variant="contained"
+                sx={{ mt: 3 }}
+                onClick={() => {
+                  setOpenModal(false);
+                  router.push('/sign-in');
+                }}
+              >
+                Set Up Profile
+              </Button>
+            </Box>
+          </Fade>
+        </Modal>
       </Container>
     </ThemeProvider>
   );
