@@ -1,7 +1,7 @@
 {
     "functions": {
       "api/generate.js": {
-        "maxDuration": 30000
+        "maxDuration": 60
       }
     }
   }
