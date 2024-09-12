@@ -4,7 +4,7 @@ import axios from 'axios';
 export async function POST(req) {
     try {
         const { criteria } = await req.json();
-        console.log(criteria)
+        console.log("inside here"+criteria)
         if (!criteria) {
             return NextResponse.json({ questions: ["No given criteria for this study"] });
         }

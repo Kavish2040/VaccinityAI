@@ -12,16 +12,20 @@ import { useUser } from '@clerk/nextjs';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Image from "next/image";
-import { styled } from '@mui/material/styles';
 
 const theme = createTheme({
     palette: {
+        mode: 'dark',
+        primary: {
+            main: '#8B5CF6', // Purple color from the image
+        },
         background: {
             default: '#000000',
+            paper: '#1F2937', // Dark gray for paper components
         },
         text: {
             primary: '#FFFFFF',
-            secondary: '#FFA500'
+            secondary: '#9CA3AF', // Light gray for secondary text
         },
     },
 });
@@ -38,8 +42,9 @@ export default function Generate() {
     const [showSimplified, setShowSimplified] = useState(true);
     const [openModal, setOpenModal] = useState(true);
     const router = useRouter();
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    // Check if sessionStorage has previous data
     useEffect(() => {
         const storedData = sessionStorage.getItem('searchData');
         if (storedData) {
@@ -49,6 +54,11 @@ export default function Generate() {
             setAge(age || '');
             setLocation(location || '');
             setIntervention(intervention || '');
+            
+            // Set the first study as selected if available
+            if (studies && studies.length > 0) {
+                setSelectedStudy(studies[0]);
+            }
         }
     }, []);
 
@@ -60,23 +70,62 @@ export default function Generate() {
     const extractAndStructureData = (data) => {
         return data.studies.map(study => {
             const lines = study.split('\n');
+            const getField = (keyword) => {
+                const line = lines.find(line => line.includes(keyword));
+                return line ? line.split('-> ')[1] : 'Not available';
+            };
+    
             return {
-                originalTitle: lines.find(line => line.startsWith('1. Original Title ->')).split('-> ')[1],
-                simplifiedTitle: lines.find(line => line.startsWith('2. Simplified Title ->')).split('-> ')[1],
-                originalDescription: lines.find(line => line.startsWith('3. Original Description ->')).split('-> ')[1],
-                simplifiedDescription: lines.find(line => line.startsWith('4. Simplified Description ->')).split('-> ')[1],
-                participants: lines.find(line => line.startsWith('5. Number of Participants ->')).split('-> ')[1],
-                minimumAge: lines.find(line => line.startsWith('6. Minimum Age ->')).split('-> ')[1],
-                leadSponsor: lines.find(line => line.startsWith('7. Lead Sponsor ->')).split('-> ')[1],
-                eligibilityCriteria: lines.find(line => line.startsWith('8. Eligibility Criteria ->')).split('-> ')[1],
-                locations: lines.find(line => line.startsWith('9. Location ->')).split('-> ')[1],
+                originalTitle: getField('Original Title'),
+                simplifiedTitle: getField('Simplified Title'),
+                originalDescription: getField('Original Description'),
+                simplifiedDescription: getField('Simplified Description'),
+                participants: getField('Number of Participants'),
+                minimumAge: getField('Minimum Age'),
+                leadSponsor: getField('Lead Sponsor'),
+                eligibilityCriteria: getField('Eligibility Criteria'),
+                locations: getField('Location'),
             };
         });
     };
 
+    const loadMoreStudies = async () => {
+        setLoading(true);
+        const bodyContent = { text, age, location, intervention, page: page + 1 };
+
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bodyContent),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const newStudies = extractAndStructureData(data);
+            
+            if (newStudies.length === 0) {
+                setHasMore(false);
+            } else {
+                setStudies([...studies, ...newStudies]);
+                setPage(page + 1);
+            }
+        } catch (error) {
+            console.error('Error fetching more studies:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleSubmit = async () => {
         setLoading(true);
-        const bodyContent = { text, age, location, intervention };
+        setPage(1);
+        setHasMore(true);
+        const bodyContent = { text, age, location, intervention, page: 1 };
+     
 
         try {
             const response = await fetch('/api/generate', {
@@ -92,9 +141,8 @@ export default function Generate() {
             const data = await response.json();
             const structuredData = extractAndStructureData(data);
             setStudies(structuredData);
-            setSelectedStudy(null); // Reset the selected study on new search
+            setSelectedStudy(null);
 
-            // Store data in sessionStorage
             sessionStorage.setItem('searchData', JSON.stringify({ studies: structuredData, text, age, location, intervention }));
         } catch (error) {
             console.error('Error fetching studies:', error);
@@ -111,12 +159,12 @@ export default function Generate() {
     };
 
     const handleToggleChange = () => {
-        setShowSimplified(!showSimplified); // Toggle between simplified and original view
+        setShowSimplified(!showSimplified);
     };
 
     const handleCheckEligibility = () => {
+        console.log("aaya"+ selectedStudy.eligibilityCriteria)
         if (selectedStudy && selectedStudy.eligibilityCriteria) {
-            // Passing selected study eligibility criteria as query parameters
             router.push(`/eligibility?eligibilityCriteria=${encodeURIComponent(JSON.stringify(selectedStudy.eligibilityCriteria))}`);
         } else {
             console.log("No study selected or eligibility criteria is missing");
@@ -128,7 +176,7 @@ export default function Generate() {
             <CssBaseline />
             <AppBar
                 position="sticky"
-                style={{
+                sx={{
                     background: 'black',
                     boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.5)',
                     borderRadius: '1px',
@@ -144,11 +192,11 @@ export default function Generate() {
                         <Button color="inherit" onClick={() => router.push('/')}>
                             HOME
                         </Button>
-                        <Typography sx={{ mx: 2 }}>|</Typography> {/* Separator */}
+                        <Typography sx={{ mx: 2 }}>|</Typography>
                         <Button color="inherit" onClick={() => router.push('/dashboard')}>
                             DASHBOARD
                         </Button>
-                        <Typography sx={{ mx: 2 }}>|</Typography> {/* Separator */}
+                        <Typography sx={{ mx: 2 }}>|</Typography>
 
                         <SignedOut>
                             <Button color="inherit" onClick={() => router.push('/sign-up')}>
@@ -204,7 +252,6 @@ export default function Generate() {
                         label="Enter Disease or Condition"
                         fullWidth
                         multiline
-                        color="warning"
                         rows={2}
                         variant="outlined"
                         sx={{
@@ -218,14 +265,12 @@ export default function Generate() {
                             }
                         }}
                     />
-
                     <TextField
                         value={age}
                         onChange={handleAgeChange}
                         label="Patient Age"
                         type="number"
                         fullWidth
-                        color="warning"
                         variant="outlined"
                         sx={{
                             mb: 2,
@@ -243,7 +288,6 @@ export default function Generate() {
                         onChange={handleLocationChange}
                         label="Location Preference"
                         fullWidth
-                        color="warning"
                         variant="outlined"
                         sx={{
                             mb: 2,
@@ -262,7 +306,6 @@ export default function Generate() {
                         label="Intervention/Treatment"
                         fullWidth
                         variant="outlined"
-                        color="warning"
                         sx={{
                             mb: 3,
                             '& .MuiInputBase-input': { color: 'white' },
@@ -279,29 +322,44 @@ export default function Generate() {
                         onClick={handleSubmit}
                         fullWidth
                         disabled={loading}
-                        sx={{ py: 1.5, backgroundColor: '#4CAF50', '&:hover': { backgroundColor: '#388E3C' } }}
+                        sx={{ py: 1.5, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
                     >
-                        {loading ? <CircularProgress size={24} color="primary" /> : 'Search Study'}
+                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Search Study'}
                     </Button>
                 </Paper>
 
                 {/* Study List and Details */}
                 <Box sx={{ display: 'flex', flexDirection: 'row', height: '80vh' }}>
                     {/* Left Side - Study List */}
-                    <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '8px', backgroundColor: '#1f1d1d', color: 'white', overflowY: 'scroll' }}>
+                    <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '8px', backgroundColor: '#1F2937', color: 'white', overflowY: 'auto' }}>
                         <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>Clinical Trials List</Typography>
                         {studies.length > 0 ? (
-                            <List>
-                                {studies.map((study, index) => (
-                                    <ListItem button key={index} onClick={() => handleStudyClick(study)} sx={{ borderBottom: '1px solid white', mb: 2 }}>
-                                        <ListItemText
-                                            primary={study.simplifiedTitle}
-                                            secondary={`Participants: ${study.participants}, Min Age: ${study.minimumAge}`}
-                                            sx={{ color: 'white' }}
-                                        />
-                                    </ListItem>
-                                ))}
-                            </List>
+                            <>
+                                <List>
+                                    {studies.map((study, index) => (
+                                        <ListItem button key={index} onClick={() => handleStudyClick(study)} sx={{ borderBottom: '1px solid #fff', mb: 2 }}>
+                                            <ListItemText
+                                                primary={study.simplifiedTitle}
+                                                secondary={`Participants: ${study.participants}, Min Age: ${study.minimumAge}`}
+                                                sx={{ 
+                                                    '& .MuiListItemText-primary': { color: 'white' },
+                                                    '& .MuiListItemText-secondary': { color: '#9CA3AF' }
+                                                }}
+                                            />
+                                        </ListItem>
+                                    ))}
+                                </List>
+                                {hasMore && (
+                                    <Button 
+                                        onClick={loadMoreStudies} 
+                                        fullWidth 
+                                        variant="contained" 
+                                        sx={{ mt: 2, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
+                                    >
+                                        Load More
+                                    </Button>
+                                )}
+                            </>
                         ) : (
                             <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
                         )}
@@ -315,10 +373,10 @@ export default function Generate() {
                             p: 3,
                             ml: 3,
                             borderRadius: '12px',
-                            background: 'linear-gradient(145deg, #222, #1b1b1b)',
+                            background: 'linear-gradient(145deg, #2D3748, #1A202C)',
                             color: 'white',
                             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
-                            overflowY: 'scroll',
+                            overflowY: 'auto',
                             transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                             '&:hover': {
                                 transform: 'scale(1.02)',
@@ -332,7 +390,14 @@ export default function Generate() {
                                     <Switch
                                         checked={showSimplified}
                                         onChange={handleToggleChange}
-                                        color="success"
+                                        sx={{
+                                            '& .MuiSwitch-switchBase.Mui-checked': {
+                                                color: '#8B5CF6',
+                                            },
+                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                backgroundColor: '#8B5CF6',
+                                            },
+                                        }}
                                     />
                                 }
                                 label={showSimplified ? "Show Original" : "Show Simplified"}
@@ -340,12 +405,11 @@ export default function Generate() {
                             />
                             <Button
                                 variant="contained"
-                                color="warning"
                                 sx={{
                                     fontWeight: 'bold',
                                     textTransform: 'none',
-                                    backgroundColor: 'green',
-                                    '&:hover': { backgroundColor: '#E68A00' }
+                                    backgroundColor: '#8B5CF6',
+                                    '&:hover': { backgroundColor: '#7C3AED' }
                                 }}
                                 onClick={handleCheckEligibility}
                             >
@@ -355,55 +419,29 @@ export default function Generate() {
 
                         {selectedStudy ? (
                             <>
-                                {showSimplified ? (
-                                    <>
-                                        <Typography
-                                            variant="h5"
-                                            sx={{
-                                                mb: 2,
-                                                color: '#E0E0E0',
-                                                fontWeight: 'bold',
-                                                fontSize: '1.5rem'
-                                            }}
-                                        >
-                                            Simplified Title: {selectedStudy.simplifiedTitle}
-                                        </Typography>
+                                <Typography
+                                    variant="h5"
+                                    sx={{
+                                        mb: 2,
+                                        color: '#E0E0E0',
+                                        fontWeight: 'bold',
+                                        fontSize: '1.5rem'
+                                    }}
+                                >
+                                    {showSimplified ? 'Simplified Title: ' : 'Original Title: '}
+                                    {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
+                                </Typography>
 
-                                        <Typography
-                                            variant="body1"
-                                            sx={{
-                                                mb: 2,
-                                                color: '#CFD8DC'
-                                            }}
-                                        >
-                                            <strong>Simplified Description:</strong> {selectedStudy.simplifiedDescription}
-                                        </Typography>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Typography
-                                            variant="h5"
-                                            sx={{
-                                                mb: 2,
-                                                color: '#E0E0E0',
-                                                fontWeight: 'bold',
-                                                fontSize: '1.5rem'
-                                            }}
-                                        >
-                                            Original Title: {selectedStudy.originalTitle}
-                                        </Typography>
-
-                                        <Typography
-                                            variant="body1"
-                                            sx={{
-                                                mb: 2,
-                                                color: '#CFD8DC'
-                                            }}
-                                        >
-                                            <strong>Original Description:</strong> {selectedStudy.originalDescription}
-                                        </Typography>
-                                    </>
-                                )}
+                                <Typography
+                                    variant="body1"
+                                    sx={{
+                                        mb: 2,
+                                        color: '#CFD8DC'
+                                    }}
+                                >
+                                    <strong>{showSimplified ? 'Simplified Description:' : 'Original Description:'}</strong> 
+                                    {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
+                                </Typography>
 
                                 <Typography
                                     variant="body1"

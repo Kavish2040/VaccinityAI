@@ -1,0 +1,39 @@
+.appBar {
+    background-color: #121212;
+    box-shadow: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.contentContainer {
+    padding-top: 40px;
+    padding-bottom: 40px;
+}
+
+.questionCard {
+    background-color: #1E1E1E;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.questionCard:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.submitButton {
+    background-color: #8B5CF6;
+    color: white;
+    padding: 12px 24px;
+    font-size: 16px;
+}
+
+.submitButton:hover {
+    background-color: #7C3AED;
+}
+
+.progressContainer {
+    margin-bottom: 32px;
+}

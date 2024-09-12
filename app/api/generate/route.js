@@ -10,7 +10,7 @@ const systemPrompt = `For each medical study, present the information in a simpl
 5. Number of Participants -> [Insert number]
 6. Minimum Age -> [Insert age]
 7. Lead Sponsor -> [Insert sponsor] 
-8. Eligibility Criteria -> Give both eligibility and ineligibility requirements. Dont seperate them by a newline
+8. Eligibility Criteria -> Give both eligibility and ineligibility requirements. Dont seperate them by a newline. Just write Inclusion: whatever whatever the text is to start with 
 9. Location -> Mention location of sponsore, facility, including coountry, zip code, city, and geopoint. if recieving multiple locations in text group all of them together without new line and return
 Ensure that there is a line space between each subtitle even after the last 9. line and maintain a consistent output format for each study without using separators like '---' between sections. Place the title information before the description for both original and simplified versions, and ensure space between the original and simplified titles and descriptions.
 
@@ -22,7 +22,6 @@ const openai = new OpenAI({
 
 async function fetchClinicalTrials(disease, location, intr) {
     const disease2 = await simplifyDisease(disease);
-    console.log("Simplified disease:", disease2);
     const baseURL = 'https://clinicaltrials.gov/api/v2/studies';
     const params = new URLSearchParams({
         'query.cond': disease2,

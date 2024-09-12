@@ -2,12 +2,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation'; 
 import { useUser } from '@clerk/nextjs';
-
 import {
   AppBar,
   Box,
-  Button,
-  Container,
   Drawer,
   List,
   ListItem,
@@ -22,10 +19,12 @@ import {
   Card,
   CardActionArea,
   CardContent,
+  IconButton,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
-import StudyIcon from '@mui/icons-material/Book'; // This should be an actual icon from @mui/icons
+import ScienceIcon from '@mui/icons-material/Science';
+import MenuIcon from '@mui/icons-material/Menu';
 
 const drawerWidth = 240;
 
@@ -33,30 +32,46 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#2196f3',
+      main: '#8B5CF6', // Bright purple for better visibility
     },
     background: {
       default: '#121212',
-      paper: '#333', // Changed to a darker shade for a more cohesive color scheme
+      paper: '#1E1E1E',
     },
-    
+    text: {
+      primary: '#FFFFFF',
+      secondary: '#B0B0B0',
+    },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
   },
   components: {
     MuiDrawer: {
       styleOverrides: {
         paper: {
-          width: drawerWidth,
+          backgroundColor: '#1A1A1A',
+          borderRight: '1px solid rgba(255, 255, 255, 0.12)',
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          alignItems: 'center',
+          backgroundColor: '#1A1A1A',
+          boxShadow: 'none',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
         },
       },
     },
-    
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#2A2A2A',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        },
+      },
+    },
   },
 });
 
@@ -70,49 +85,42 @@ export default function Dashboard() {
   };
 
   const drawer = (
-    <div>
-      <Toolbar> 
-        <Typography variant="h5" sx={{mr:1, fontWeight: 'bold',  }}>
-          {user ? `${user.firstName || ' '}` : ' '}  
-        </Typography>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', }}>
-          {user ? `${user.lastName || ''}` : ' '}
-        </Typography>
-      </Toolbar>
-      <List sx={{borderTop: '1px solid #FFF',}}>
+    <Box sx={{ color: 'white' }}>
+      <Toolbar />
+      <List>
         {[
           { text: 'Home', icon: <HomeIcon />, onClick: () => router.push('/') },
           { text: 'Logout', icon: <LogoutIcon />, onClick: () => router.push('/') },
-        ].map((item, index) => (
+        ].map((item) => (
           <ListItem button key={item.text} onClick={item.onClick}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: theme.palette.primary.main }}>{item.icon}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
       </List>
-    </div>
+    </Box>
   );
+
+  const dashboardItems = [
+    { title: 'Clinical Trials', description: 'Access and monitor ongoing clinical trials', icon: <ScienceIcon fontSize="large" />, link: '/generate' },
+  ];
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', backgroundColor:"" }}>
-        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1, width: `calc(100% - ${drawerWidth}px)`,  backgroundColor: '#00A36C', }}>
+      <Box sx={{ display: 'flex' }}>
+        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
           <Toolbar>
-            <Typography 
-              variant="h5" 
-              noWrap 
-              component="div" 
-              sx={{ 
-                fontWeight: 'bold', 
-                color: '#000000', 
-                letterSpacing: '0.5px', 
-                textTransform: 'uppercase', 
-                mb: 2,
-                mt: 2,
-                fontSize: '1.5rem', 
-              }}
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { sm: 'none' } }}
             >
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
               Dashboard
             </Typography>
           </Toolbar>
@@ -127,35 +135,25 @@ export default function Dashboard() {
         >
           {drawer}
         </Drawer>
-        <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` }}}>
+        <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
           <Toolbar />
-          <Grid container spacing={3}>
-            {/* Example cards for different sections */}
-            {[
-              { title: 'Patient Data', description: 'View and manage patient data.', link: '/patientdata' },
-              { title: 'Clinical Trials', description: 'Access and get live updates of clinical trials.', link: '/generate' },
-            ].map((card, index) => (
+          <Typography variant="h4" sx={{ mb: 4, color: theme.palette.primary.main, fontWeight: 'bold' }}>
+            Welcome back, {user?.firstName || 'User'}!
+          </Typography>
+          <Grid container spacing={4}>
+            {dashboardItems.map((item, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Card 
-                  sx={{ 
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease', 
-                    '&:hover': { 
-                      transform: 'scale(1.05)', 
-                      boxShadow: '0 8px 16px rgba(0, 0, 0, 0.2)', 
-                      backgroundColor: '#1a1a1a', // Slightly change background color on hover
-                    },
-                    cursor: 'pointer', // Change the cursor to pointer for better UX
-                    backgroundColor: '#2d2d2d', // Set a consistent background color
-                    color: '#ffffff', // Ensure text color contrasts with the background
-                  }}
-                >
-                  <CardActionArea onClick={() => router.push(card.link)}>
+                <Card>
+                  <CardActionArea onClick={() => router.push(item.link)} sx={{ p: 3 }}>
                     <CardContent>
-                      <Typography gutterBottom variant="h5" component="div">
-                        {card.title}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        {item.icon}
+                        <Typography variant="h6" component="div" sx={{ ml: 2 }}>
+                          {item.title}
+                        </Typography>
+                      </Box>
                       <Typography variant="body2" color="text.secondary">
-                        {card.description}
+                        {item.description}
                       </Typography>
                     </CardContent>
                   </CardActionArea>

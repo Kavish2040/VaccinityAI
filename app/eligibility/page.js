@@ -1,32 +1,31 @@
 "use client";
 
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
-    Container, Typography, Paper, TextField,
-    CssBaseline, Button, Box, CircularProgress,
-    AppBar, Toolbar, Modal, Fade, Backdrop, IconButton,
-    Card, CardContent, LinearProgress
+    Container, Typography, TextField, Button, Box, CircularProgress,
+    AppBar, Toolbar, Modal, Fade, Backdrop, IconButton, LinearProgress,
+    ThemeProvider, createTheme, CssBaseline
 } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useRouter } from 'next/navigation';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import styles from './Eligibility.module.css';
 
 const theme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#4CAF50',
-        },
-        secondary: {
-            main: '#FF4081',
+            main: '#8B5CF6', // Purple from the image
         },
         background: {
             default: '#121212',
             paper: '#1E1E1E',
+        },
+        text: {
+            primary: '#FFFFFF',
+            secondary: '#B0B0B0',
         },
     },
     typography: {
@@ -39,27 +38,12 @@ const theme = createTheme({
         },
     },
     components: {
-        MuiPaper: {
-            styleOverrides: {
-                root: {
-                    borderRadius: '16px',
-                    padding: '24px',
-                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                },
-            },
-        },
         MuiButton: {
             styleOverrides: {
                 root: {
                     borderRadius: '8px',
-                    padding: '12px 24px',
-                    fontWeight: 600,
                     textTransform: 'none',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 20px rgba(76, 175, 80, 0.4)',
-                    },
+                    fontWeight: 600,
                 },
             },
         },
@@ -67,45 +51,13 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     '& .MuiOutlinedInput-root': {
-                        borderRadius: '12px',
-                        transition: 'all 0.3s ease',
-                        '&:hover': {
-                            boxShadow: '0 0 0 2px rgba(255, 255, 255, 0.1)',
-                        },
-                        '&.Mui-focused': {
-                            boxShadow: '0 0 0 2px rgba(76, 175, 80, 0.4)',
-                        },
-                    },
-                },
-            },
-        },
-        MuiCard: {
-            styleOverrides: {
-                root: {
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                        transform: 'translateY(-5px)',
-                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2)',
+                        borderRadius: '8px',
                     },
                 },
             },
         },
     },
 });
-
-const modalStyle = {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 400,
-    bgcolor: 'background.paper',
-    borderRadius: '16px',
-    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
-    p: 4,
-};
 
 export default function Eligibility() {
     const searchParams = useSearchParams();
@@ -120,21 +72,28 @@ export default function Eligibility() {
 
     useEffect(() => {
         const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
+        console.log("Raw eligibilityCriteriaParam:", eligibilityCriteriaParam);
 
         if (eligibilityCriteriaParam) {
             try {
-                const parsedCriteria = JSON.parse(decodeURIComponent(eligibilityCriteriaParam));
-                setEligibilityCriteria(parsedCriteria);
-                fetchQuestions(parsedCriteria);
+                const decodedParam = decodeURIComponent(eligibilityCriteriaParam);
+                console.log("Decoded eligibilityCriteriaParam:", decodedParam);
+
+                setEligibilityCriteria(decodedParam);
+                fetchQuestions(decodedParam);
             } catch (error) {
-                console.error('Error parsing eligibility criteria:', error);
+                setEligibilityCriteria(eligibilityCriteriaParam);
+                fetchQuestions(eligibilityCriteriaParam);
             }
         } else {
+            console.log("No eligibilityCriteriaParam found in URL");
             router.push('/');
         }
     }, [searchParams, router]);
 
     const fetchQuestions = async (criteria) => {
+        console.log("Criteria received in fetchQuestions:", criteria);
+        setLoading(true);
         try {
             const response = await fetch('/api/openai', {
                 method: 'POST',
@@ -149,11 +108,18 @@ export default function Eligibility() {
             }
 
             const data = await response.json();
+            console.log("Response from /api/openai:", data);
            
-            setQuestions(data.questions.filter(q => q.text.trim()));
-            setAnswers(new Array(data.questions.length).fill(''));
+            if (data.questions && Array.isArray(data.questions)) {
+                setQuestions(data.questions.filter(q => q.text.trim()));
+                setAnswers(new Array(data.questions.length).fill(''));
+            } else {
+                console.error("Unexpected response format from /api/openai");
+                setQuestions([]);
+            }
         } catch (error) {
             console.error('Error fetching questions:', error);
+            setQuestions([]);
         } finally {
             setLoading(false);
         }
@@ -183,20 +149,20 @@ export default function Eligibility() {
 
                 const data = await response.json();
                 setMatchResult(data);
-                console.log(data)
+                console.log("Match result:", data);
                 setModalOpen(true);
             } catch (error) {
                 console.error('Error in submission:', error);
             }
         } else {
-            console.log("No study selected or eligibility criteria is missing");
+            console.log("No questions or answers available");
         }
     };
 
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <AppBar position="sticky" elevation={0} sx={{ bgcolor: 'background.default', borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+            <AppBar position="sticky" className={styles.appBar}>
                 <Toolbar>
                     <IconButton edge="start" color="inherit" onClick={() => router.back()} sx={{ mr: 2 }}>
                         <ArrowBackIosNewIcon />
@@ -207,54 +173,55 @@ export default function Eligibility() {
                 </Toolbar>
             </AppBar>
 
-            <Container maxWidth="md" sx={{ py: 5 }}>
-                <Typography variant="h4" sx={{ mb: 4, textAlign: 'center' }}>
+            <Container maxWidth="md" className={styles.contentContainer}>
+                <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', color: 'primary.main' }}>
                     Eligibility Criteria Questions
                 </Typography>
-
+                
                 {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-                        <CircularProgress color="primary" />
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+                        <CircularProgress color="primary" size={60} />
                     </Box>
                 ) : (
-                    <Card elevation={3}>
-                        <CardContent>
-                            <LinearProgress variant="determinate" value={progress} sx={{ mb: 3 }} />
-                            {questions.length > 0 ? (
-                                questions.map((question, index) => (
-                                    <Box key={index} sx={{ mb: 3 }}>
-                                        <Typography variant="body1" sx={{ mb: 1, fontWeight: 500 }}>
-                                            {question.text}
-                                        </Typography>
-                                        <TextField
-                                            variant="outlined"
-                                            fullWidth
-                                            value={answers[index]}
-                                            onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                            placeholder="Type your response here"
-                                            sx={{ bgcolor: 'background.paper' }}
-                                        />
-                                    </Box>
-                                ))
-                            ) : (
-                                <Typography variant="body1" sx={{ textAlign: 'center' }}>
-                                    No given criteria for this study.
+                    <>
+                        <Box className={styles.progressContainer}>
+                            <LinearProgress variant="determinate" value={progress} sx={{ height: 10, borderRadius: 5 }} />
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'right' }}>
+                                {`${Math.round(progress)}% Complete`}
+                            </Typography>
+                        </Box>
+                        
+                        {questions.map((question, index) => (
+                            <Box key={index} className={styles.questionCard}>
+                                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                                    Question {index + 1}
                                 </Typography>
-                            )}
-
-                            <Box sx={{ textAlign: 'center', mt: 4 }}>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={handleSubmit}
-                                    sx={{ px: 5, py: 2 }}
-                                    disabled={progress !== 100}
-                                >
-                                    Submit Answers
-                                </Button>
+                                <Typography variant="body1" sx={{ mb: 2 }}>
+                                    {question.text}
+                                </Typography>
+                                <TextField
+                                    fullWidth
+                                    variant="outlined"
+                                    value={answers[index]}
+                                    onChange={(e) => handleAnswerChange(index, e.target.value)}
+                                    placeholder="Type your answer here"
+                                    multiline
+                                    rows={3}
+                                />
                             </Box>
-                        </CardContent>
-                    </Card>
+                        ))}
+
+                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={progress !== 100}
+                                size="large"
+                                className={styles.submitButton}
+                            >
+                                Submit Answers
+                            </Button>
+                        </Box>
+                    </>
                 )}
             </Container>
 
@@ -270,7 +237,17 @@ export default function Eligibility() {
                 }}
             >
                 <Fade in={modalOpen}>
-                    <Box sx={modalStyle}>
+                    <Box sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                        width: 400,
+                        bgcolor: 'background.paper',
+                        borderRadius: '16px',
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.3)',
+                        p: 4,
+                    }}>
                         <IconButton
                             aria-label="close"
                             onClick={() => setModalOpen(false)}
