@@ -25,7 +25,7 @@ async function fetchClinicalTrials(disease, location, intr) {
     const baseURL = 'https://clinicaltrials.gov/api/v2/studies';
     const params = new URLSearchParams({
         'query.cond': disease2,
-        pageSize: '15'
+        pageSize: '6'
     });
 
     if (location) {
@@ -115,7 +115,7 @@ export async function POST(req) {
             const minimumAge = protocolSection.eligibilityModule?.minimumAge || "0 years";
             const minimumAgeValue = parseInt(minimumAge.match(/(\d+)/));
 
-            if (age >= minimumAgeValue && count <= 12) {
+            if (age >= minimumAgeValue && count <= 6) {
                 const studyDetails = JSON.stringify({
                     studyName: trialName,
                     studyDescription: protocolSection.descriptionModule.briefSummary,
