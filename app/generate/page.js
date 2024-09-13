@@ -17,15 +17,15 @@ const theme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#8B5CF6', // Purple color from the image
+            main: '#8B5CF6',
         },
         background: {
             default: '#000000',
-            paper: '#1F2937', // Dark gray for paper components
+            paper: '#1F2937',
         },
         text: {
             primary: '#FFFFFF',
-            secondary: '#9CA3AF', // Light gray for secondary text
+            secondary: '#9CA3AF',
         },
     },
 });
@@ -42,20 +42,20 @@ export default function Generate() {
     const [showSimplified, setShowSimplified] = useState(true);
     const [openModal, setOpenModal] = useState(true);
     const router = useRouter();
-    const [page, setPage] = useState(1);
+    const [nextPageToken, setNextPageToken] = useState('');
     const [hasMore, setHasMore] = useState(true);
 
     useEffect(() => {
         const storedData = sessionStorage.getItem('searchData');
         if (storedData) {
-            const { studies, text, age, location, intervention } = JSON.parse(storedData);
+            const { studies, text, age, location, intervention, nextPageToken } = JSON.parse(storedData);
             setStudies(studies || []);
             setText(text || '');
             setAge(age || '');
             setLocation(location || '');
             setIntervention(intervention || '');
+            setNextPageToken(nextPageToken || '');
             
-            // Set the first study as selected if available
             if (studies && studies.length > 0) {
                 setSelectedStudy(studies[0]);
             }
@@ -68,7 +68,7 @@ export default function Generate() {
     const handleInterventionChange = (event) => setIntervention(event.target.value);
 
     const extractAndStructureData = (data) => {
-        return data.studies.map(study => {
+        return data.map(study => {
             const lines = study.split('\n');
             const getField = (keyword) => {
                 const line = lines.find(line => line.includes(keyword));
@@ -76,6 +76,7 @@ export default function Generate() {
             };
     
             return {
+                ID: (getField('ID')).trim(),
                 originalTitle: getField('Original Title'),
                 simplifiedTitle: getField('Simplified Title'),
                 originalDescription: getField('Original Description'),
@@ -91,7 +92,13 @@ export default function Generate() {
 
     const loadMoreStudies = async () => {
         setLoading(true);
-        const bodyContent = { text, age, location, intervention, page: page + 1 };
+        const bodyContent = { 
+            text, 
+            age, 
+            location, 
+            intervention, 
+            pageToken: nextPageToken
+        };
 
         try {
             const response = await fetch('/api/generate', {
@@ -99,19 +106,27 @@ export default function Generate() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyContent),
             });
-
+    
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
+    
             const data = await response.json();
-            const newStudies = extractAndStructureData(data);
-            
-            if (newStudies.length === 0) {
-                setHasMore(false);
+            if (data.studies && data.studies.length > 0) {
+                const newStudies = extractAndStructureData(data.studies);
+                setStudies(prevStudies => [...prevStudies, ...newStudies]);
+                setNextPageToken(data.nextPageToken);
+                setHasMore(data.hasMore);
+
+                // Update session storage with new data
+                const currentData = JSON.parse(sessionStorage.getItem('searchData') || '{}');
+                sessionStorage.setItem('searchData', JSON.stringify({
+                    ...currentData,
+                    studies: [...(currentData.studies || []), ...newStudies],
+                    nextPageToken: data.nextPageToken
+                }));
             } else {
-                setStudies([...studies, ...newStudies]);
-                setPage(page + 1);
+                setHasMore(false);
             }
         } catch (error) {
             console.error('Error fetching more studies:', error);
@@ -122,11 +137,10 @@ export default function Generate() {
 
     const handleSubmit = async () => {
         setLoading(true);
-        setPage(1);
+        setNextPageToken('');
         setHasMore(true);
-        const bodyContent = { text, age, location, intervention, page: 1 };
+        const bodyContent = { text, age, location, intervention, pageToken: '' };
      
-
         try {
             const response = await fetch('/api/generate', {
                 method: 'POST',
@@ -139,14 +153,24 @@ export default function Generate() {
             }
 
             const data = await response.json();
-            const structuredData = extractAndStructureData(data);
+            const structuredData = extractAndStructureData(data.studies);
             setStudies(structuredData);
             setSelectedStudy(null);
+            setNextPageToken(data.nextPageToken);
+            setHasMore(data.hasMore);
 
-            sessionStorage.setItem('searchData', JSON.stringify({ studies: structuredData, text, age, location, intervention }));
+            sessionStorage.setItem('searchData', JSON.stringify({ 
+                studies: structuredData, 
+                text, 
+                age, 
+                location, 
+                intervention,
+                nextPageToken: data.nextPageToken
+            }));
         } catch (error) {
             console.error('Error fetching studies:', error);
             setStudies([]);
+            setNextPageToken('');
         } finally {
             setLoading(false);
         }
@@ -163,7 +187,6 @@ export default function Generate() {
     };
 
     const handleCheckEligibility = () => {
-        console.log("aaya"+ selectedStudy.eligibilityCriteria)
         if (selectedStudy && selectedStudy.eligibilityCriteria) {
             router.push(`/eligibility?eligibilityCriteria=${encodeURIComponent(JSON.stringify(selectedStudy.eligibilityCriteria))}`);
         } else {
@@ -364,7 +387,7 @@ export default function Generate() {
                             <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
                         )}
                     </Paper>
-
+    
                     {/* Right Side - Study Details */}
                     <Paper
                         elevation={3}
@@ -416,7 +439,7 @@ export default function Generate() {
                                 Check Eligibility
                             </Button>
                         </Box>
-
+    
                         {selectedStudy ? (
                             <>
                                 <Typography
@@ -431,7 +454,7 @@ export default function Generate() {
                                     {showSimplified ? 'Simplified Title: ' : 'Original Title: '}
                                     {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
                                 </Typography>
-
+    
                                 <Typography
                                     variant="body1"
                                     sx={{
@@ -442,7 +465,7 @@ export default function Generate() {
                                     <strong>{showSimplified ? 'Simplified Description:' : 'Original Description:'}</strong> 
                                     {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
                                 </Typography>
-
+    
                                 <Typography
                                     variant="body1"
                                     sx={{
@@ -452,7 +475,7 @@ export default function Generate() {
                                 >
                                     <strong>Minimum Age:</strong> {selectedStudy.minimumAge}
                                 </Typography>
-
+    
                                 <Typography
                                     variant="body1"
                                     sx={{
@@ -462,7 +485,7 @@ export default function Generate() {
                                 >
                                     <strong>Participants:</strong> {selectedStudy.participants}
                                 </Typography>
-
+    
                                 <Typography
                                     variant="body1"
                                     sx={{
@@ -472,7 +495,7 @@ export default function Generate() {
                                 >
                                     <strong>Lead Sponsor:</strong> {selectedStudy.leadSponsor}
                                 </Typography>
-
+    
                                 <Typography
                                     variant="body1"
                                     sx={{
