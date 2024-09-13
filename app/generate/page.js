@@ -4,7 +4,9 @@ import {
     Container, Typography, Paper, Dialog, DialogTitle,
     DialogContent, DialogContentText, TextField, Button,
     CircularProgress, Box, CssBaseline, List, ListItem,
-    ListItemText, Switch, FormControlLabel, Toolbar, AppBar
+    ListItemText, Switch, FormControlLabel, Toolbar, AppBar,
+    Stepper, Step, StepLabel, Card, CardContent, Chip, Fade,
+    IconButton, Tooltip
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,23 +14,19 @@ import { useUser } from '@clerk/nextjs';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Image from "next/image";
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Person, LocationOn, Science, Group, Business, ExpandMore, ExpandLess } from '@mui/icons-material';
 
 const theme = createTheme({
     palette: {
         mode: 'dark',
-        primary: {
-            main: '#8B5CF6',
-        },
-        background: {
-            default: '#000000',
-            paper: '#1F2937',
-        },
-        text: {
-            primary: '#FFFFFF',
-            secondary: '#9CA3AF',
-        },
+        primary: { main: '#8B5CF6' },
+        background: { default: '#000000', paper: '#1F2937' },
+        text: { primary: '#FFFFFF', secondary: '#9CA3AF' },
     },
 });
+
+const steps = ['Disease/Condition', 'Age', 'Location', 'Intervention'];
 
 export default function Generate() {
     const { user } = useUser();
@@ -44,6 +42,7 @@ export default function Generate() {
     const router = useRouter();
     const [nextPageToken, setNextPageToken] = useState('');
     const [hasMore, setHasMore] = useState(true);
+    const [activeStep, setActiveStep] = useState(0);
 
     useEffect(() => {
         const storedData = sessionStorage.getItem('searchData');
@@ -93,11 +92,7 @@ export default function Generate() {
     const loadMoreStudies = async () => {
         setLoading(true);
         const bodyContent = { 
-            text, 
-            age, 
-            location, 
-            intervention, 
-            pageToken: nextPageToken
+            text, age, location, intervention, pageToken: nextPageToken
         };
 
         try {
@@ -118,7 +113,6 @@ export default function Generate() {
                 setNextPageToken(data.nextPageToken);
                 setHasMore(data.hasMore);
 
-                // Update session storage with new data
                 const currentData = JSON.parse(sessionStorage.getItem('searchData') || '{}');
                 sessionStorage.setItem('searchData', JSON.stringify({
                     ...currentData,
@@ -161,10 +155,7 @@ export default function Generate() {
 
             sessionStorage.setItem('searchData', JSON.stringify({ 
                 studies: structuredData, 
-                text, 
-                age, 
-                location, 
-                intervention,
+                text, age, location, intervention,
                 nextPageToken: data.nextPageToken
             }));
         } catch (error) {
@@ -177,15 +168,8 @@ export default function Generate() {
     };
 
     const handleCloseModal = () => setOpenModal(false);
-
-    const handleStudyClick = (study) => {
-        setSelectedStudy(study);
-    };
-
-    const handleToggleChange = () => {
-        setShowSimplified(!showSimplified);
-    };
-
+    const handleStudyClick = (study) => setSelectedStudy(study);
+    const handleToggleChange = () => setShowSimplified(!showSimplified);
     const handleCheckEligibility = () => {
         if (selectedStudy && selectedStudy.eligibilityCriteria) {
             router.push(`/eligibility?eligibilityCriteria=${encodeURIComponent(JSON.stringify(selectedStudy.eligibilityCriteria))}`);
@@ -194,37 +178,93 @@ export default function Generate() {
         }
     };
 
+    const handleNext = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    };
+
+    const handleBack = () => {
+        setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
+
+    const getStepContent = (step) => {
+        const textFieldStyle = {
+            '& .MuiInputBase-input': { color: 'white' },
+            '& .MuiInputLabel-root': { color: 'white' },
+            '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: 'white' },
+                '&:hover fieldset': { borderColor: 'white' },
+                '&.Mui-focused fieldset': { borderColor: 'white' },
+            }
+        };
+
+        switch (step) {
+            case 0:
+                return (
+                    <TextField
+                        value={text}
+                        onChange={handleTextChange}
+                        label="Enter Disease or Condition"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        variant="outlined"
+                        sx={textFieldStyle}
+                    />
+                );
+            case 1:
+                return (
+                    <TextField
+                        value={age}
+                        onChange={handleAgeChange}
+                        label="Patient Age"
+                        type="number"
+                        fullWidth
+                        variant="outlined"
+                        sx={textFieldStyle}
+                    />
+                );
+            case 2:
+                return (
+                    <TextField
+                        value={location}
+                        onChange={handleLocationChange}
+                        label="Location Preference"
+                        fullWidth
+                        variant="outlined"
+                        sx={textFieldStyle}
+                    />
+                );
+            case 3:
+                return (
+                    <TextField
+                        value={intervention}
+                        onChange={handleInterventionChange}
+                        label="Intervention/Treatment"
+                        fullWidth
+                        variant="outlined"
+                        sx={textFieldStyle}
+                    />
+                );
+            default:
+                return 'Unknown step';
+        }
+    };
+
     return (
         <ThemeProvider theme={theme}>
             <CssBaseline />
-            <AppBar
-                position="sticky"
-                sx={{
-                    background: 'black',
-                    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.5)',
-                    borderRadius: '1px',
-                }}
-                elevation={2}
-            >
+            <AppBar position="sticky" sx={{ background: 'black', boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.5)' }}>
                 <Toolbar>
                     <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', mb: -1.25, ml: 0, mt: -1 }}>
                         <Image src="/logo1.png" alt="Vaccinity AI Logo" width={205} height={100} />
                     </Box>
-
                     <Box sx={{ flexGrow: 0, display: 'flex', alignItems: 'center', mr: 0, mt: -1 }}>
-                        <Button color="inherit" onClick={() => router.push('/')}>
-                            HOME
-                        </Button>
+                        <Button color="inherit" onClick={() => router.push('/')}>HOME</Button>
                         <Typography sx={{ mx: 2 }}>|</Typography>
-                        <Button color="inherit" onClick={() => router.push('/dashboard')}>
-                            DASHBOARD
-                        </Button>
+                        <Button color="inherit" onClick={() => router.push('/dashboard')}>DASHBOARD</Button>
                         <Typography sx={{ mx: 2 }}>|</Typography>
-
                         <SignedOut>
-                            <Button color="inherit" onClick={() => router.push('/sign-up')}>
-                                SIGN UP
-                            </Button>
+                            <Button color="inherit" onClick={() => router.push('/sign-up')}>SIGN UP</Button>
                         </SignedOut>
                         <SignedIn>
                             <UserButton />
@@ -244,284 +284,195 @@ export default function Generate() {
                     <Button onClick={handleCloseModal} color="primary">Close</Button>
                 </Dialog>
 
-                <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 4,
-                    p: 3,
-                    mt: 2,
-                    backgroundColor: '#1f1d1d',
-                    boxShadow: '0px 3px 10px rgba(255, 255, 255, 0.2)',
-                    borderRadius: '8px'
-                }}>
-                    <Typography variant="h5" sx={{ color: 'white', fontWeight: 'bold' }}>
-                        Generate Study Details
-                    </Typography>
-                    <Button
-                        variant="contained"
-                        onClick={() => router.push('/dashboard')}
-                        sx={{ bgcolor: 'primary.main', color: 'white', '&:hover': { bgcolor: 'primary.dark' } }}
-                    >
-                        Dashboard
-                    </Button>
-                </Box>
-
-                {/* Search Form */}
-                <Paper elevation={3} sx={{ p: 4, mb: 5, borderRadius: '8px', backgroundColor: '#1f1d1d', color: 'white' }}>
-                    <TextField
-                        value={text}
-                        onChange={handleTextChange}
-                        label="Enter Disease or Condition"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        variant="outlined"
-                        sx={{
-                            mb: 2,
-                            '& .MuiInputBase-input': { color: 'white' },
-                            '& .MuiInputLabel-root': { color: 'white' },
-                            '& .MuiOutlinedInput-root': {
-                                '& fieldset': { borderColor: 'white' },
-                                '&:hover fieldset': { borderColor: 'white' },
-                                '&.Mui-focused fieldset': { borderColor: 'white' },
-                            }
-                        }}
-                    />
-                    <TextField
-                        value={age}
-                        onChange={handleAgeChange}
-                        label="Patient Age"
-                        type="number"
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                            mb: 2,
-                            '& .MuiInputBase-input': { color: 'white' },
-                            '& .MuiInputLabel-root': { color: 'white' },
-                            '& .MuiOutlinedInput-root': {
-                                '& fieldset': { borderColor: 'white' },
-                                '&:hover fieldset': { borderColor: 'white' },
-                                '&.Mui-focused fieldset': { borderColor: 'white' },
-                            }
-                        }}
-                    />
-                    <TextField
-                        value={location}
-                        onChange={handleLocationChange}
-                        label="Location Preference"
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                            mb: 2,
-                            '& .MuiInputBase-input': { color: 'white' },
-                            '& .MuiInputLabel-root': { color: 'white' },
-                            '& .MuiOutlinedInput-root': {
-                                '& fieldset': { borderColor: 'white' },
-                                '&:hover fieldset': { borderColor: 'white' },
-                                '&.Mui-focused fieldset': { borderColor: 'white' },
-                            }
-                        }}
-                    />
-                    <TextField
-                        value={intervention}
-                        onChange={handleInterventionChange}
-                        label="Intervention/Treatment"
-                        fullWidth
-                        variant="outlined"
-                        sx={{
-                            mb: 3,
-                            '& .MuiInputBase-input': { color: 'white' },
-                            '& .MuiInputLabel-root': { color: 'white' },
-                            '& .MuiOutlinedInput-root': {
-                                '& fieldset': { borderColor: 'white' },
-                                '&:hover fieldset': { borderColor: 'white' },
-                                '&.Mui-focused fieldset': { borderColor: 'white' },
-                            }
-                        }}
-                    />
-                    <Button
-                        variant="contained"
-                        onClick={handleSubmit}
-                        fullWidth
-                        disabled={loading}
-                        sx={{ py: 1.5, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
-                    >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : 'Search Study'}
-                    </Button>
-                </Paper>
-
-                {/* Study List and Details */}
-                <Box sx={{ display: 'flex', flexDirection: 'row', height: '80vh' }}>
-                    {/* Left Side - Study List */}
-                    <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '8px', backgroundColor: '#1F2937', color: 'white', overflowY: 'auto' }}>
-                        <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>Clinical Trials List</Typography>
-                        {studies.length > 0 ? (
-                            <>
-                                <List>
-                                    {studies.map((study, index) => (
-                                        <ListItem button key={index} onClick={() => handleStudyClick(study)} sx={{ borderBottom: '1px solid #fff', mb: 2 }}>
-                                            <ListItemText
-                                                primary={study.simplifiedTitle}
-                                                secondary={`Participants: ${study.participants}, Min Age: ${study.minimumAge}`}
-                                                sx={{ 
-                                                    '& .MuiListItemText-primary': { color: 'white' },
-                                                    '& .MuiListItemText-secondary': { color: '#9CA3AF' }
-                                                }}
-                                            />
-                                        </ListItem>
-                                    ))}
-                                </List>
-                                {hasMore && (
-                                    <Button 
-                                        onClick={loadMoreStudies} 
-                                        fullWidth 
-                                        variant="contained" 
-                                        sx={{ mt: 2, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
-                                    >
-                                        Load More
-                                    </Button>
-                                )}
-                            </>
-                        ) : (
-                            <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
-                        )}
-                    </Paper>
-    
-                    {/* Right Side - Study Details */}
-                    <Paper
-                        elevation={3}
-                        sx={{
-                            flex: 2,
-                            p: 3,
-                            ml: 3,
-                            borderRadius: '12px',
-                            background: 'linear-gradient(145deg, #2D3748, #1A202C)',
-                            color: 'white',
-                            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4)',
-                            overflowY: 'auto',
-                            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                            '&:hover': {
-                                transform: 'scale(1.02)',
-                                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
-                            },
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <FormControlLabel
-                                control={
-                                    <Switch
-                                        checked={showSimplified}
-                                        onChange={handleToggleChange}
-                                        sx={{
-                                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                                color: '#8B5CF6',
-                                            },
-                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                                backgroundColor: '#8B5CF6',
-                                            },
-                                        }}
-                                    />
-                                }
-                                label={showSimplified ? "Show Original" : "Show Simplified"}
-                                sx={{ color: '#FFFFFF' }}
-                            />
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                >
+                    <Paper elevation={3} sx={{ p: 4, mb: 5, borderRadius: '16px', backgroundColor: '#1f1d1d' }}>
+                        <Typography variant="h4" sx={{ mb: 4, color: 'white', fontWeight: 'bold', textAlign: 'center' }}>
+                            Find Your Clinical Trial
+                        </Typography>
+                        <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
+                            {steps.map((label, index) => (
+                                <Step key={label}>
+                                    <StepLabel StepIconComponent={({active, completed}) => (
+                                        <motion.div
+                                            initial={false}
+                                            animate={{ scale: active || completed ? 1.2 : 1 }}
+                                        >
+                                            {index === 0 && <Search color={active || completed ? "primary" : "disabled"} />}
+                                            {index === 1 && <Person color={active || completed ? "primary" : "disabled"} />}
+                                            {index === 2 && <LocationOn color={active || completed ? "primary" : "disabled"} />}
+                                            {index === 3 && <Science color={active || completed ? "primary" : "disabled"} />}
+                                        </motion.div>
+                                    )}>
+                                        {label}
+                                    </StepLabel>
+                                </Step>
+                            ))}
+                        </Stepper>
+                        <Box sx={{ mt: 4, mb: 2 }}>
+                            {getStepContent(activeStep)}
+                        </Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+                            <Button
+                                disabled={activeStep === 0}
+                                onClick={handleBack}
+                                variant="outlined"
+                                sx={{ color: 'white', borderColor: 'white' }}
+                            >
+                                Back
+                            </Button>
                             <Button
                                 variant="contained"
-                                sx={{
-                                    fontWeight: 'bold',
-                                    textTransform: 'none',
-                                    backgroundColor: '#8B5CF6',
-                                    '&:hover': { backgroundColor: '#7C3AED' }
-                                }}
-                                onClick={handleCheckEligibility}
+                                onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
+                                sx={{ backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
                             >
-                                Check Eligibility
+                                {activeStep === steps.length - 1 ? 'Search Studies' : 'Next'}
                             </Button>
                         </Box>
-    
-                        {selectedStudy ? (
-                            <>
-                                <Typography
-                                    variant="h5"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#E0E0E0',
-                                        fontWeight: 'bold',
-                                        fontSize: '1.5rem'
-                                    }}
-                                >
-                                    {showSimplified ? 'Simplified Title: ' : 'Original Title: '}
-                                    {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
-                                </Typography>
-    
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#CFD8DC'
-                                    }}
-                                >
-                                    <strong>{showSimplified ? 'Simplified Description:' : 'Original Description:'}</strong> 
-                                    {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
-                                </Typography>
-    
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#90A4AE'
-                                    }}
-                                >
-                                    <strong>Minimum Age:</strong> {selectedStudy.minimumAge}
-                                </Typography>
-    
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#90A4AE'
-                                    }}
-                                >
-                                    <strong>Participants:</strong> {selectedStudy.participants}
-                                </Typography>
-    
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#90A4AE'
-                                    }}
-                                >
-                                    <strong>Lead Sponsor:</strong> {selectedStudy.leadSponsor}
-                                </Typography>
-    
-                                <Typography
-                                    variant="body1"
-                                    sx={{
-                                        mb: 2,
-                                        color: '#90A4AE'
-                                    }}
-                                >
-                                    <strong>Location:</strong> {selectedStudy.locations}
-                                </Typography>
-                            </>
-                        ) : (
-                            <Typography
-                                variant="body1"
-                                sx={{
-                                    color: 'white',
-                                    fontWeight: 'bold',
-                                    fontSize: '1.2rem',
-                                    textAlign: 'center',
-                                }}
-                            >
-                                Select a study to see more details.
-                            </Typography>
-                        )}
                     </Paper>
-                </Box>
-            </Container>
-        </ThemeProvider>
-    );
-}
+                </motion.div>
+
+                {/* Study List and Details */}
+                <Box sx={{ display: 'flex', flexDirection: 'row', height: '60vh' }}>
+                    {/* Left Side - Study List */}
+                    <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '16px', backgroundColor: '#1F2937', overflowY: 'auto' }}>
+                        <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>Clinical Trials</Typography>
+                        {studies.length > 0 ? (
+                            <AnimatePresence>
+                                {studies.map((study, index) => (
+                                    <motion.div
+                                        key={study.ID}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                                    >
+                                    <Card 
+                                                sx={{ 
+                                                    mb: 2, 
+                                                    backgroundColor: selectedStudy?.ID === study.ID ? 'rgba(139, 92, 246, 0.2)' : '#2D3748',
+                                                    transition: 'all 0.3s ease',
+                                                    '&:hover': {
+                                                        transform: 'translateY(-5px)',
+                                                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                                    }
+                                                }}
+                                                onClick={() => handleStudyClick(study)}
+                                            >
+                                                <CardContent>
+                                                    <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
+                                                        {study.simplifiedTitle}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                        <Chip 
+                                                            icon={<Group sx={{ color: 'white' }} />} 
+                                                            label={`Participants: ${study.participants}`}
+                                                            sx={{ backgroundColor: '#4A5568', color: 'white' }}
+                                                        />
+                                                        <Chip 
+                                                            icon={<Person sx={{ color: 'white' }} />} 
+                                                            label={`Min Age: ${study.minimumAge}`}
+                                                            sx={{ backgroundColor: '#4A5568', color: 'white' }}
+                                                        />
+                                                    </Box>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            ) : (
+                                <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
+                            )}
+                            {hasMore && (
+                                <Button 
+                                    onClick={loadMoreStudies} 
+                                    fullWidth 
+                                    variant="contained" 
+                                    sx={{ mt: 2, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
+                                >
+                                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Load More'}
+                                </Button>
+                            )}
+                        </Paper>
+        
+                        {/* Right Side - Study Details */}
+                        <Paper
+                            elevation={3}
+                            sx={{
+                                flex: 2,
+                                p: 3,
+                                ml: 3,
+                                borderRadius: '16px',
+                                background: 'linear-gradient(145deg, #2D3748, #1A202C)',
+                                color: 'white',
+                                overflowY: 'auto',
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={showSimplified}
+                                            onChange={handleToggleChange}
+                                            sx={{
+                                                '& .MuiSwitch-switchBase.Mui-checked': {
+                                                    color: '#8B5CF6',
+                                                },
+                                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                    backgroundColor: '#8B5CF6',
+                                                },
+                                            }}
+                                        />
+                                    }
+                                    label={showSimplified ? "Show Original" : "Show Simplified"}
+                                    sx={{ color: '#FFFFFF' }}
+                                />
+                                <Button
+                                    variant="contained"
+                                    sx={{
+                                        fontWeight: 'bold',
+                                        textTransform: 'none',
+                                        backgroundColor: '#8B5CF6',
+                                        '&:hover': { backgroundColor: '#7C3AED' }
+                                    }}
+                                    onClick={handleCheckEligibility}
+                                >
+                                    Check Eligibility
+                                </Button>
+                            </Box>
+        
+                            {selectedStudy ? (
+                                <Fade in={true}>
+                                    <Box>
+                                        <Typography variant="h5" sx={{ mb: 2, color: '#E0E0E0', fontWeight: 'bold' }}>
+                                            {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
+                                        </Typography>
+                                        <Typography variant="body1" sx={{ mb: 2, color: '#CFD8DC' }}>
+                                            {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
+                                        </Typography>
+                                     
+                                        <Typography variant="body1" sx={{ mb: 2, color: '#90A4AE' }}>
+                                            <strong>Location:</strong> {selectedStudy.locations}
+                                        </Typography>
+
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                                            <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} />
+                                            <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} />
+                                            <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} />
+                                        </Box>
+                                    </Box>
+                                </Fade>
+                            ) : (
+                                <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', textAlign: 'center' }}>
+                                    Select a study to see more details.
+                                </Typography>
+                            )}
+                        </Paper>
+                    </Box>
+                </Container>
+            </ThemeProvider>
+        );
+    }
