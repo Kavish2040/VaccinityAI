@@ -25,7 +25,7 @@ export async function POST(req) {
             Have questions covering every eligibility and exclusion criteria text. COVER EVERY SINGLE POSSIBLE QUESTION THAT CAN BE MADE
             Dont write anything like Here is a set of yes/no questions that can be presented to the user as part of a checkbox-based eligibility screening process, based on the provided eligibility criteria: just give questions.
             Make sure to be precise and mention every small detail and explain complicated medical terms present in the qeustion in () next to the word itsefl
-         
+         Make question withing this models token limit
             `;
 
        

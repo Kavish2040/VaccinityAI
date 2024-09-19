@@ -89,10 +89,22 @@ export default function Generate() {
         });
     };
 
+    // Helper function to get seen IDs from studies
+    const getSeenIds = () => {
+        return studies.map(study => study.ID);
+    };
+
     const loadMoreStudies = async () => {
         setLoading(true);
+        const seenIds = getSeenIds(); // Get the list of seen IDs
+
         const bodyContent = { 
-            text, age, location, intervention, pageToken: nextPageToken
+            text, 
+            age, 
+            location, 
+            intervention, 
+            pageToken: nextPageToken,
+            seenIds, // Include seen IDs in the request
         };
 
         try {
@@ -133,7 +145,14 @@ export default function Generate() {
         setLoading(true);
         setNextPageToken('');
         setHasMore(true);
-        const bodyContent = { text, age, location, intervention, pageToken: '' };
+        const bodyContent = { 
+            text, 
+            age, 
+            location, 
+            intervention, 
+            pageToken: '',
+            seenIds: [], // Reset seen IDs for a new search
+        };
      
         try {
             const response = await fetch('/api/generate', {
@@ -155,7 +174,10 @@ export default function Generate() {
 
             sessionStorage.setItem('searchData', JSON.stringify({ 
                 studies: structuredData, 
-                text, age, location, intervention,
+                text, 
+                age, 
+                location, 
+                intervention,
                 nextPageToken: data.nextPageToken
             }));
         } catch (error) {
@@ -336,7 +358,7 @@ export default function Generate() {
                 </motion.div>
 
                 {/* Study List and Details */}
-                <Box sx={{ display: 'flex', flexDirection: 'row', height: '60vh' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'row', height: '80vh' }}>
                     {/* Left Side - Study List */}
                     <Paper elevation={3} sx={{ flex: 1, p: 2, borderRadius: '16px', backgroundColor: '#1F2937', overflowY: 'auto' }}>
                         <Typography variant="h6" sx={{ mb: 2, color: 'white', fontWeight: 'bold' }}>Clinical Trials</Typography>
@@ -350,129 +372,129 @@ export default function Generate() {
                                         exit={{ opacity: 0, y: -20 }}
                                         transition={{ duration: 0.3, delay: index * 0.1 }}
                                     >
-                                    <Card 
-                                                sx={{ 
-                                                    mb: 2, 
-                                                    backgroundColor: selectedStudy?.ID === study.ID ? 'rgba(139, 92, 246, 0.2)' : '#2D3748',
-                                                    transition: 'all 0.3s ease',
-                                                    '&:hover': {
-                                                        transform: 'translateY(-5px)',
-                                                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                                                    }
-                                                }}
-                                                onClick={() => handleStudyClick(study)}
-                                            >
-                                                <CardContent>
-                                                    <Typography variant="h6" sx={{ color: 'white', mb: 1 }}>
-                                                        {study.simplifiedTitle}
-                                                    </Typography>
-                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                        <Chip 
-                                                            icon={<Group sx={{ color: 'white' }} />} 
-                                                            label={`Participants: ${study.participants}`}
-                                                            sx={{ backgroundColor: '#4A5568', color: 'white' }}
-                                                        />
-                                                        <Chip 
-                                                            icon={<Person sx={{ color: 'white' }} />} 
-                                                            label={`Min Age: ${study.minimumAge}`}
-                                                            sx={{ backgroundColor: '#4A5568', color: 'white' }}
-                                                        />
-                                                    </Box>
-                                                </CardContent>
-                                            </Card>
-                                        </motion.div>
-                                    ))}
-                                </AnimatePresence>
-                            ) : (
-                                <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
-                            )}
-                            {hasMore && (
-                                <Button 
-                                    onClick={loadMoreStudies} 
-                                    fullWidth 
-                                    variant="contained" 
-                                    sx={{ mt: 2, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
-                                >
-                                    {loading ? <CircularProgress size={24} color="inherit" /> : 'Load More'}
-                                </Button>
-                            )}
-                        </Paper>
-        
-                        {/* Right Side - Study Details */}
-                        <Paper
-                            elevation={3}
-                            sx={{
-                                flex: 2,
-                                p: 3,
-                                ml: 3,
-                                borderRadius: '16px',
-                                background: 'linear-gradient(145deg, #2D3748, #1A202C)',
-                                color: 'white',
-                                overflowY: 'auto',
-                            }}
-                        >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={showSimplified}
-                                            onChange={handleToggleChange}
-                                            sx={{
-                                                '& .MuiSwitch-switchBase.Mui-checked': {
-                                                    color: '#8B5CF6',
-                                                },
-                                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                                    backgroundColor: '#8B5CF6',
-                                                },
+                                        <Card 
+                                            sx={{ 
+                                                mb: 2, 
+                                                backgroundColor: selectedStudy?.ID === study.ID ? 'rgba(139, 92, 246, 0.2)' : '#2D3748',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-5px)',
+                                                    boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                                                }
                                             }}
-                                        />
-                                    }
-                                    label={showSimplified ? "Show Original" : "Show Simplified"}
-                                    sx={{ color: '#FFFFFF' }}
-                                />
-                                <Button
-                                    variant="contained"
-                                    sx={{
-                                        fontWeight: 'bold',
-                                        textTransform: 'none',
-                                        backgroundColor: '#8B5CF6',
-                                        '&:hover': { backgroundColor: '#7C3AED' }
-                                    }}
-                                    onClick={handleCheckEligibility}
-                                >
-                                    Check Eligibility
-                                </Button>
-                            </Box>
-        
-                            {selectedStudy ? (
-                                <Fade in={true}>
-                                    <Box>
-                                        <Typography variant="h5" sx={{ mb: 2, color: '#E0E0E0', fontWeight: 'bold' }}>
-                                            {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{ mb: 2, color: '#CFD8DC' }}>
-                                            {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
-                                        </Typography>
-                                     
-                                        <Typography variant="body1" sx={{ mb: 2, color: '#90A4AE' }}>
-                                            <strong>Location:</strong> {selectedStudy.locations}
-                                        </Typography>
+                                            onClick={() => handleStudyClick(study)}
+                                        >
+                                            <CardContent>
+                                                <Typography  sx={{ color: 'white', mb: 1 }}>
+                                                    {study.simplifiedTitle}
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                                                    <Chip 
+                                                        icon={<Group sx={{ color: 'white' }} />} 
+                                                        label={`Participants: ${study.participants}`}
+                                                        sx={{ backgroundColor: '#4A5568', color: 'white' }}
+                                                    />
+                                                    <Chip 
+                                                        icon={<Person sx={{ color: 'white' }} />} 
+                                                        label={`Min Age: ${study.minimumAge}`}
+                                                        sx={{ backgroundColor: '#4A5568', color: 'white' }}
+                                                    />
+                                                </Box>
+                                            </CardContent>
+                                        </Card>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                        ) : (
+                            <Typography sx={{ color: 'white', textAlign: 'center' }}>No studies found.</Typography>
+                        )}
+                        {hasMore && (
+                            <Button 
+                                onClick={loadMoreStudies} 
+                                fullWidth 
+                                variant="contained" 
+                                sx={{ mt: 2, backgroundColor: '#8B5CF6', '&:hover': { backgroundColor: '#7C3AED' } }}
+                            >
+                                {loading ? <CircularProgress size={24} color="inherit" /> : 'Load More'}
+                            </Button>
+                        )}
+                    </Paper>
 
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-                                            <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} />
-                                            <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} />
-                                            <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} />
-                                        </Box>
+                    {/* Right Side - Study Details */}
+                    <Paper
+                        elevation={3}
+                        sx={{
+                            flex: 2,
+                            p: 3,
+                            ml: 3,
+                            borderRadius: '16px',
+                            background: 'linear-gradient(145deg, #2D3748, #1A202C)',
+                            color: 'white',
+                            overflowY: 'auto',
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={showSimplified}
+                                        onChange={handleToggleChange}
+                                        sx={{
+                                            '& .MuiSwitch-switchBase.Mui-checked': {
+                                                color: '#8B5CF6',
+                                            },
+                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                backgroundColor: '#8B5CF6',
+                                            },
+                                        }}
+                                    />
+                                }
+                                label={showSimplified ? "Show Original" : "Show Simplified"}
+                                sx={{ color: '#FFFFFF' }}
+                            />
+                            <Button
+                                variant="contained"
+                                sx={{
+                                    fontWeight: 'bold',
+                                    textTransform: 'none',
+                                    backgroundColor: '#8B5CF6',
+                                    '&:hover': { backgroundColor: '#7C3AED' }
+                                }}
+                                onClick={handleCheckEligibility}
+                            >
+                                Check Eligibility
+                            </Button>
+                        </Box>
+
+                        {selectedStudy ? (
+                            <Fade in={true}>
+                                <Box>
+                                    <Typography variant="h5" sx={{ mb: 2, color: '#E0E0E0', fontWeight: 'bold' }}>
+                                        {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
+                                    </Typography>
+                                    <Typography variant="body1" sx={{ mb: 2, color: '#CFD8DC' }}>
+                                        {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
+                                    </Typography>
+                                
+                                    <Typography variant="body1" sx={{ mb: 2, color: '#90A4AE' }}>
+                                        <strong>Location:</strong> {selectedStudy.locations}
+                                    </Typography>
+
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                                        <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} />
+                                        <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} />
+                                        <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} />
                                     </Box>
-                                </Fade>
-                            ) : (
-                                <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', textAlign: 'center' }}>
-                                    Select a study to see more details.
-                                </Typography>
-                            )}
-                        </Paper>
-                    </Box>
-                </Container>
-            </ThemeProvider>
-        );
-    }
+                                </Box>
+                            </Fade>
+                        ) : (
+                            <Typography variant="body1" sx={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', textAlign: 'center' }}>
+                                Select a study to see more details.
+                            </Typography>
+                        )}
+                    </Paper>
+                </Box>
+            </Container>
+        </ThemeProvider>
+    );
+}

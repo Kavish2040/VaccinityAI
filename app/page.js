@@ -74,7 +74,6 @@ const FeatureCard = ({ icon, title, description }) => (
   </motion.div>
 );
 
-
 const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
   <Box
     onClick={onClick}
@@ -179,7 +178,6 @@ const ServiceExplanation = () => {
   );
 };
 
-
 const ContactForm = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -209,11 +207,6 @@ const ContactForm = () => {
       console.error('Error:', error);
     });
   };
-  
-  
-
-
-
 
   return (
     <Box sx={{ my: 12 }}>
@@ -353,6 +346,7 @@ const Footer = ({ darkMode }) => {
     </Box>
   );
 };
+
 export default function Home() {
   const router = useRouter();
   const { user } = useUser();
@@ -504,8 +498,8 @@ export default function Home() {
               <Switch
                   checked={darkMode}
                   onChange={() => setDarkMode(!darkMode)}
-                  icon={<LightModeOutlinedIcon sx={{ color: '#000000' }} />}
-                  checkedIcon={<DarkModeOutlinedIcon sx={{ color: '#fff' }} />}
+                  icon={<LightModeOutlinedIcon sx={{ color: darkMode ? '#000000' : '#000000' }} />}
+                  checkedIcon={<DarkModeOutlinedIcon sx={{ color: darkMode ? '#fff' : '#fff' }} />}
                   sx={{
                     '& .MuiSwitch-switchBase': {
                       '&.Mui-checked': {
@@ -610,145 +604,155 @@ export default function Home() {
           <ContactForm />
 
           <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: 'easeInOut' }}
-    >
-      <Box sx={{ my: 12, textAlign: "center", position: 'relative', py: 8, bgcolor: '#121212', overflow: 'hidden' }}>
-        {/* Parallax Background Effect */}
-        <motion.div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            backgroundImage: 'url(/path-to-background-image.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            opacity: 0.15,
-            zIndex: -1,
-          }}
-          animate={{ y: [0, 15, 0] }}
-          transition={{ duration: 6, ease: 'easeInOut', loop: Infinity }}
-        />
-
-        {/* Section Title */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        >
-          <Typography variant="h2" gutterBottom textAlign="center" sx={{ mb: 4, color: 'white', fontWeight: 'bold' }}>
-            Start Your Journey with VaccinityAI
-          </Typography>
-        </motion.div>
-
-        {/* Call to Action Buttons */}
-        <Grid container spacing={4} justifyContent="center">
-          <Grid item>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.5 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: 'easeInOut' }}
+          >
+            <Box 
+              sx={{ 
+                my: 12, 
+                textAlign: "center", 
+                position: 'relative', 
+                py: 8, 
+                bgcolor: darkMode ? '' : 'background.default', // Updated to use theme-aware background
+                overflow: 'hidden' 
+              }}
             >
+              {/* Parallax Background Effect */}
               <motion.div
-                whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
-                transition={{ type: 'spring', stiffness: 200 }}
-              >
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="large"
-                  sx={{
-                    py: 2,
-                    px: 6,
-                    fontSize: '1.2rem',
-                    borderRadius: 50,
-                    borderColor: 'primary',
-                    color: 'white',
-                    transition: 'all 0.3s ease',
-                    boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
-                    position: 'relative',
-                    '&:hover': {
-                      backgroundColor: '#FF5E84',
-                      color: 'white',
-                      transform: 'translateY(-5px)',
-                      boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
-                    },
-                  }}
-                  onClick={handleCheckout}
-                >
-                  {rippleEffect && (
-                    <motion.span
-                      style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        width: '300%',
-                        height: '300%',
-                        background: 'rgba(255, 94, 132, 0.4)',
-                        borderRadius: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        zIndex: 0,
-                      }}
-                      initial={{ scale: 0, opacity: 1 }}
-                      animate={{ scale: 1, opacity: 0 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                  )}
-                  <RocketLaunchIcon sx={{ fontSize: '1.5rem', mr: 1 }} />
-                  Join VaccinityAI
-                </Button>
-              </motion.div>
-            </motion.div>
-          </Grid>
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  opacity: 0.15,
+                  zIndex: -1,
+                }}
+                animate={{ y: [0, 15, 0] }}
+                transition={{ duration: 6, ease: 'easeInOut', loop: Infinity }}
+              />
 
-          {/* Additional CTA Button */}
-          <Grid item>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-            >
+              {/* Section Title */}
               <motion.div
-                whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
-                transition={{ type: 'spring', stiffness: 200 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3 }}
               >
-                <Button
-                   variant="outlined"
-                   color="primary"
-                   size="large"
-                   sx={{
-                     py: 2,
-                     px: 6,
-                     fontSize: '1.2rem',
-                     borderRadius: 50,
-                     borderColor: 'primary',
-                     color: 'white',
-                     transition: 'all 0.3s ease',
-                     boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
-                     position: 'relative',
-                     '&:hover': {
-                       backgroundColor: '#FF5E84',
-                       color: 'white',
-                       transform: 'translateY(-5px)',
-                       boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
-                     },
-                   }}
-                  onClick={() => console.log('Explore More')}
+                <Typography 
+                  variant="h2" 
+                  gutterBottom 
+                  textAlign="center" 
+                  sx={{ mb: 4, color: darkMode ? 'text.primary' : 'text.secondary', fontWeight: 'bold' }} // Updated to use theme-aware text color
                 >
-                  Explore Features
-                </Button>
+                  Start Your Journey with VaccinityAI
+                </Typography>
               </motion.div>
-            </motion.div>
-          </Grid>
-        </Grid>
-      </Box>
-    </motion.div>
 
+              {/* Call to Action Buttons */}
+              <Grid container spacing={4} justifyContent="center">
+                <Grid item>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.5 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
+                      transition={{ type: 'spring', stiffness: 200 }}
+                    >
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        size="large"
+                        sx={{
+                          py: 2,
+                          px: 6,
+                          fontSize: '1.2rem',
+                          borderRadius: 50,
+                          borderColor: 'primary.main',
+                          color: darkMode ? 'text.primary' : 'text.secondary', // Updated to use theme-aware text color
+                          transition: 'all 0.3s ease',
+                          boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
+                          position: 'relative',
+                          '&:hover': {
+                            backgroundColor: '#FF5E84',
+                            color: 'white',
+                            transform: 'translateY(-5px)',
+                            boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
+                          },
+                        }}
+                        onClick={handleCheckout}
+                      >
+                        {rippleEffect && (
+                          <motion.span
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              width: '300%',
+                              height: '300%',
+                              background: 'rgba(255, 94, 132, 0.4)',
+                              borderRadius: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              zIndex: 0,
+                            }}
+                            initial={{ scale: 0, opacity: 1 }}
+                            animate={{ scale: 1, opacity: 0 }}
+                            transition={{ duration: 0.5 }}
+                          />
+                        )}
+                        <RocketLaunchIcon sx={{ fontSize: '1.5rem', mr: 1 }} />
+                        Join VaccinityAI
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                </Grid>
 
-
+                {/* Additional CTA Button */}
+                <Grid item>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.6 }}
+                  >
+                    <motion.div
+                      whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
+                      transition={{ type: 'spring', stiffness: 200 }}
+                    >
+                      <Button
+                         variant="outlined"
+                         color="primary"
+                         size="large"
+                         sx={{
+                           py: 2,
+                           px: 6,
+                           fontSize: '1.2rem',
+                           borderRadius: 50,
+                           borderColor: 'primary.main',
+                           color: darkMode ? 'text.primary' : 'text.secondary', // Updated to use theme-aware text color
+                           transition: 'all 0.3s ease',
+                           boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
+                           position: 'relative',
+                           '&:hover': {
+                             backgroundColor: '#FF5E84',
+                             color: 'white',
+                             transform: 'translateY(-5px)',
+                             boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
+                           },
+                         }}
+                        onClick={() => console.log('Explore More')}
+                      >
+                        Explore Features
+                      </Button>
+                    </motion.div>
+                  </motion.div>
+                </Grid>
+              </Grid>
+            </Box>
+          </motion.div>
         </Container>
 
         <Modal
