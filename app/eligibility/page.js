@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
-    Container, Typography, TextField, Button, Box, CircularProgress,
-    AppBar, Toolbar, IconButton, LinearProgress, ThemeProvider, 
-    createTheme, CssBaseline, Snackbar, Alert, Paper, Dialog,
-    DialogTitle, DialogContent, DialogContentText, DialogActions
+  Container, Typography, TextField, Button, Box, CircularProgress,
+  AppBar, Toolbar, IconButton, LinearProgress, ThemeProvider,
+  createTheme, CssBaseline, Snackbar, Alert, Dialog, DialogTitle,
+  DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
 import SaveIcon from '@mui/icons-material/Save';
@@ -15,17 +15,17 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
-import { useUser } from "@clerk/nextjs"; // Importing Clerk's useUser for user details
+import { useUser } from "@clerk/nextjs"; // Import Clerk's useUser for user details
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
-  authDomain: "vaccinityai-7941b.firebaseapp.com",
-  projectId: "vaccinityai-7941b",
-  storageBucket: "vaccinityai-7941b.appspot.com",
-  messagingSenderId: "1011572729936",
-  appId: "1:1011572729936:web:97103ef7f3c638f2a20955",
-  measurementId: "G-J0JVXZ72HD"
+        apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
+        authDomain: "vaccinityai-7941b.firebaseapp.com",
+        projectId: "vaccinityai-7941b",
+        storageBucket: "vaccinityai-7941b.appspot.com",
+        messagingSenderId: "1011572729936",
+        appId: "1:1011572729936:web:97103ef7f3c638f2a20955",
+        measurementId: "G-J0JVXZ72HD"
 };
 
 // Initialize Firebase
@@ -33,183 +33,180 @@ const app = initializeApp(firebaseConfig);
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 const db = getFirestore(app);
 
-// Material-UI theme customization
+// Custom theme for MUI components
 const theme = createTheme({
-    palette: {
-        mode: 'dark',
-        primary: { main: '#8B5CF6' },
-        background: { default: '#121212', paper: '#1E1E1E' },
-        text: { primary: '#FFFFFF', secondary: '#B0B0B0' },
-    },
-    typography: {
-        fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-        h4: { fontWeight: 600 },
-        h6: { fontWeight: 600 },
-    },
-    components: {
-        MuiButton: {
-            styleOverrides: {
-                root: {
-                    borderRadius: '8px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                },
-            },
+  palette: {
+    mode: 'dark',
+    primary: { main: '#8B5CF6' },
+    background: { default: '#121212', paper: '#1E1E1E' },
+    text: { primary: '#FFFFFF', secondary: '#B0B0B0' },
+  },
+  typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: { fontWeight: 600 },
+    h6: { fontWeight: 600 },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: '8px',
+          textTransform: 'none',
+          fontWeight: 600,
         },
-        MuiTextField: {
-            styleOverrides: {
-                root: {
-                    '& .MuiOutlinedInput-root': {
-                        borderRadius: '8px',
-                    },
-                },
-            },
-        },
+      },
     },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: '8px',
+          },
+        },
+      },
+    },
+  },
 });
 
 export default function Eligibility() {
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const { user } = useUser(); // Getting user data from Clerk
-    const [eligibilityCriteria, setEligibilityCriteria] = useState('');
-    const [questions, setQuestions] = useState([]);
-    const [answers, setAnswers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [matchResult, setMatchResult] = useState(null);
-    const [progress, setProgress] = useState(0);
-    const [snackbarOpen, setSnackbarOpen] = useState(false);
-    const [snackbarMessage, setSnackbarMessage] = useState('');
-    const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-    const [isSaving, setIsSaving] = useState(false);
-    const [dialogOpen, setDialogOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const { user } = useUser(); // Clerk user data
+  const [eligibilityCriteria, setEligibilityCriteria] = useState('');
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [matchResult, setMatchResult] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [isSaving, setIsSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
-    // Fetch eligibility criteria and questions on component mount
-    useEffect(() => {
-        const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
-        if (eligibilityCriteriaParam) {
-            try {
-                const decodedParam = decodeURIComponent(eligibilityCriteriaParam);
-                setEligibilityCriteria(decodedParam);
-                fetchQuestions(decodedParam);
-            } catch (error) {
-                console.error('Error decoding eligibility criteria:', error);
-                setEligibilityCriteria(eligibilityCriteriaParam);
-                fetchQuestions(eligibilityCriteriaParam);
-            }
-        } else {
-            router.push('/');
-        }
-    }, [searchParams, router]);
+  // Fetch eligibility criteria and corresponding questions
+  useEffect(() => {
+    const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
+    if (eligibilityCriteriaParam) {
+      try {
+        const decodedParam = decodeURIComponent(eligibilityCriteriaParam);
+        setEligibilityCriteria(decodedParam);
+        fetchQuestions(decodedParam);
+      } catch (error) {
+        console.error('Error decoding eligibility criteria:', error);
+        setEligibilityCriteria(eligibilityCriteriaParam);
+        fetchQuestions(eligibilityCriteriaParam);
+      }
+    } else {
+      router.push('/');
+    }
+  }, [searchParams, router]);
 
-    // Function to fetch questions based on eligibility criteria
-    const fetchQuestions = async (criteria) => {
-        setLoading(true);
-        try {
-            const response = await fetch('/api/openai', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ criteria }),
-            });
+  // Fetch questions based on eligibility criteria
+  const fetchQuestions = async (criteria) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/openai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ criteria }),
+      });
 
-            if (!response.ok) throw new Error(`Error fetching questions: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Error fetching questions: ${response.statusText}`);
 
-            const data = await response.json();
-            if (data.questions && Array.isArray(data.questions)) {
-                const filteredQuestions = data.questions.filter(q => q.text && q.text.trim());
-                setQuestions(filteredQuestions);
-                setAnswers(new Array(filteredQuestions.length).fill(''));
-                setProgress(0);
-            } else {
-                console.error("Unexpected response format from /api/openai");
-                setQuestions([]);
-                setAnswers([]);
-            }
-        } catch (error) {
-            console.error('Error fetching questions:', error);
-            setQuestions([]);
-            setAnswers([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+      const data = await response.json();
+      if (data.questions && Array.isArray(data.questions)) {
+        const filteredQuestions = data.questions.map(q => ({ text: q.text, selected: false }));
+        setQuestions(filteredQuestions);
+        setAnswers(new Array(filteredQuestions.length).fill(''));
+        setProgress(0);
+      } else {
+        console.error("Unexpected response format from /api/openai");
+        setQuestions([]);
+        setAnswers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+      setQuestions([]);
+      setAnswers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Handle changes in answer inputs
-    const handleAnswerChange = (index, answer) => {
-        const updatedAnswers = [...answers];
-        updatedAnswers[index] = answer;
-        setAnswers(updatedAnswers);
-        const filled = updatedAnswers.filter(a => a.trim() !== '').length;
-        setProgress((filled / questions.length) * 100);
-    };
+  // Update answers and track progress
+  const handleAnswerChange = (index, value) => {
+    const updatedAnswers = [...answers];
+    updatedAnswers[index] = value;
+    setAnswers(updatedAnswers);
+    const filled = updatedAnswers.filter(a => a.trim() !== '').length;
+    setProgress((filled / questions.length) * 100);
+  };
 
-    // Submit answers and fetch match result
-    const handleSubmit = async () => {
-        if (questions.length > 0 && answers.every(a => a.trim() !== '')) {
-            try {
-                const response = await fetch('/api/match', { 
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ questions, answers, eligibilityCriteria }),
-                });
+  // Submit answers and get match result
+  const handleSubmit = async () => {
+    if (answers.some(a => a.trim() === '')) {
+      setSnackbarMessage("Please answer all questions before submitting.");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+    console.log("here12"+questions)
+    try {
+      const response = await fetch('/api/match', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ questions, answers, eligibilityCriteria }),
+      });
 
-                if (!response.ok) throw new Error(`Error fetching response: ${response.statusText}`);
+      if (!response.ok) throw new Error(`Error fetching response: ${response.statusText}`);
 
-                const data = await response.json();
-                setMatchResult(data);
-                setDialogOpen(true);
-            } catch (error) {
-                console.error('Error in submission:', error);
-                setSnackbarMessage("Error processing your answers. Please try again.");
-                setSnackbarSeverity("error");
-                setSnackbarOpen(true);
-            }
-        } else {
-            setSnackbarMessage("Please answer all questions before submitting.");
-            setSnackbarSeverity("warning");
-            setSnackbarOpen(true);
-        }
-    };
+      const data = await response.json();
+      setMatchResult(data);
+      setDialogOpen(true);
+    } catch (error) {
+      console.error('Error in submission:', error);
+      setSnackbarMessage("Error processing your answers. Please try again.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
 
-    // Save study data to Firebase with user ID
-    const handleSaveStudy = async () => {
-        if (!matchResult || !matchResult.match || !user?.id) return;
+  // Save the study and user data to Firebase
+  const handleSaveStudy = async () => {
+    if (!matchResult || !user?.id) return;
+    setIsSaving(true);
+    try {
+      const docRef = await addDoc(collection(db, "savedStudies"), {
+        eligibilityCriteria,
+        questions,
+        answers,
+        matchResult,
+        timestamp: new Date(),
+        userId: user.id,
+      });
+      console.log("Document written with ID: ", docRef.id);
+      setSnackbarMessage("Study saved successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      setDialogOpen(false);
+    } catch (e) {
+      console.error("Error adding document: ", e);
+      setSnackbarMessage("Error saving study. Please try again.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-        setIsSaving(true);
-        try {
-            const docRef = await addDoc(collection(db, "savedStudies"), {
-                eligibilityCriteria,
-                questions,
-                answers,
-                matchResult,
-                timestamp: new Date(),
-                userId: user.id,  // Save user ID for pulling data in the dashboard
-            });
-            console.log("Document written with ID: ", docRef.id);
-            setSnackbarMessage("Study saved successfully!");
-            setSnackbarSeverity("success");
-            setSnackbarOpen(true);
-            setDialogOpen(false); // Close the dialog after saving
-        } catch (e) {
-            console.error("Error adding document: ", e);
-            setSnackbarMessage("Error saving study. Please try again.");
-            setSnackbarSeverity("error");
-            setSnackbarOpen(true);
-        } finally {
-            setIsSaving(false);
-        }
-    };
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
+  };
 
-    // Handle closing the Snackbar
-    const handleSnackbarClose = (event, reason) => {
-        if (reason === 'clickaway') return;
-        setSnackbarOpen(false);
-    };
-
-    // Handle closing the Dialog
-    const handleDialogClose = () => {
-        setDialogOpen(false);
-    };
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+  };
 
     return (
         <ThemeProvider theme={theme}>

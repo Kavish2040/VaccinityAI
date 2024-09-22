@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
 import getStripe from '@/utils/get-stripe';
-import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import {
   Container,
   Typography,
@@ -24,12 +24,12 @@ import {
   TextField,
   Link,
   IconButton,
-  Paper
+  Paper,
+  Divider  // Added Divider here
 } from '@mui/material';
 import { motion } from 'framer-motion';
 import Head from 'next/head';
 import { useRouter } from "next/navigation";
-import { useUser } from '@clerk/nextjs';
 import { styled } from '@mui/material/styles';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
@@ -43,6 +43,12 @@ import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import FloatingChatbot from './chatbot/FloatingChatbot';  // Adjust the import path as needed
+import { Email, Person, Message } from '@mui/icons-material';
+import ContactForm from './contactform/page.js';
+import EnhancedDivider from './EnhancedDivider/page.js';
+import FeaturesSection from './FeaturesSection/page.js'; // Adjust the import path as needed
+import EnhancedCTASection from './EnhancedCTASection/page.js'; // Import the new CTA section
 
 const AnimatedTypography = ({ text, delay = 0 }) => (
   <motion.div
@@ -125,7 +131,7 @@ const ServiceExplanation = () => {
   ];
 
   return (
-    <Box sx={{ py: 10, bgcolor: '' }}>
+    <Box sx={{ py: 10 }}>
       <Container maxWidth="lg">
         <Typography variant="h2" gutterBottom textAlign="center" fontWeight="bold" mb={6}>
           How VaccinityAI Works
@@ -178,86 +184,10 @@ const ServiceExplanation = () => {
   );
 };
 
-const ContactForm = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    fetch('http://localhost:3001/send-email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    })
-    .then(response => response.json())
-    .then(data => {
-      console.log('Success:', data);
-      setFormData({ name: '', email: '', message: '' }); // Reset form after submission
-    })
-    .catch((error) => {
-      console.error('Error:', error);
-    });
-  };
+<ContactForm />
 
-  return (
-    <Box sx={{ my: 12 }}>
-      <Typography variant="h2" gutterBottom textAlign="center">
-        Contact Us
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Message"
-              name="message"
-              multiline
-              rows={4}
-              value={formData.message}
-              onChange={handleChange}
-              required
-            />
-          </Grid>
-          <Grid item xs={12} textAlign='center' >
-            <Button type="submit" variant="contained" color="primary">
-              Send Message
-            </Button>
-          </Grid>
-        </Grid>
-      </form>
-    </Box>
-  );
-};
 
 const Footer = ({ darkMode }) => {
   const handleSubscribe = (e) => {
@@ -353,6 +283,7 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [rippleEffect, setRippleEffect] = useState(false);
+  
 
   const theme = createTheme({
     palette: {
@@ -445,6 +376,7 @@ export default function Home() {
           <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
         </Head>
 
+        {/* AppBar Section */}
         <AppBar position="fixed" color="transparent" elevation={0} sx={{ backdropFilter: 'blur(10px)'}}>
           <Toolbar sx={{mb:-2}}>
             <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
@@ -496,37 +428,38 @@ export default function Home() {
                 <UserButton />
               </SignedIn>
               <Switch
-                  checked={darkMode}
-                  onChange={() => setDarkMode(!darkMode)}
-                  icon={<LightModeOutlinedIcon sx={{ color: darkMode ? '#000000' : '#000000' }} />}
-                  checkedIcon={<DarkModeOutlinedIcon sx={{ color: darkMode ? '#fff' : '#fff' }} />}
-                  sx={{
-                    '& .MuiSwitch-switchBase': {
-                      '&.Mui-checked': {
-                        color: '#FFFFFF',
-                        '& + .MuiSwitch-track': {
-                          backgroundColor: '#424242',
-                        },
+                checked={darkMode}
+                onChange={() => setDarkMode(!darkMode)}
+                icon={<LightModeOutlinedIcon sx={{ color: darkMode ? '#000000' : '#000000' }} />}
+                checkedIcon={<DarkModeOutlinedIcon sx={{ color: darkMode ? '#fff' : '#fff' }} />}
+                sx={{
+                  '& .MuiSwitch-switchBase': {
+                    '&.Mui-checked': {
+                      color: '#FFFFFF',
+                      '& + .MuiSwitch-track': {
+                        backgroundColor: '#424242',
                       },
                     },
-                    '& .MuiSwitch-track': {
-                      borderRadius: 22 / 2,
-                      backgroundColor: '#B0BEC5',
-                      opacity: 1,
-                      transition: 'background-color 0.3s',
-                    },
-                    '& .MuiSwitch-thumb': {
-                      width: 24,
-                      height: 24,
-                      backgroundColor: darkMode ? '#9C27B0' : '#FFD700',
-                      boxShadow: '0 0 8px rgba(0, 0, 0, 0.2)',
-                    },
-                  }}
-                />
+                  },
+                  '& .MuiSwitch-track': {
+                    borderRadius: 22 / 2,
+                    backgroundColor: '#B0BEC5',
+                    opacity: 1,
+                    transition: 'background-color 0.3s',
+                  },
+                  '& .MuiSwitch-thumb': {
+                    width: 24,
+                    height: 24,
+                    backgroundColor: darkMode ? '#9C27B0' : '#FFD700',
+                    boxShadow: '0 0 8px rgba(0, 0, 0, 0.2)',
+                  },
+                }}
+              />
             </Stack>
           </Toolbar>
         </AppBar>
 
+        {/* Hero Section */}
         <GradientBox>
           <Container maxWidth="md">
             <AnimatedTypography text={`Hey ${user?.firstName || 'there'},`} delay={0.2} />
@@ -546,215 +479,63 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.8 }}
             >
               <Button
-              variant="contained"
-              size="large"
-              sx={{
-                py: 2,
-                px: 6,
-                fontSize: '1.2rem',
-                backgroundColor: 'white',
-                color: 'primary.main',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                }
-              }}
-              onClick={() => {
-                if (user) {
-                  router.push('/generate');  // Redirect to the generate page if the user is signed in
-                } else {
-                  setOpenModal(true);  // Open modal if not signed in
-                }
-              }}
-            >
-              Get Started
-            </Button>
+                variant="contained"
+                size="large"
+                sx={{
+                  py: 2,
+                  px: 6,
+                  fontSize: '1.2rem',
+                  backgroundColor: 'white',
+                  color: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                  }
+                }}
+                onClick={() => {
+                  if (user) {
+                    router.push('/generate');  // Redirect to the generate page if the user is signed in
+                  } else {
+                    setOpenModal(true);  // Open modal if not signed in
+                  }
+                }}
+              >
+                Get Started
+              </Button>
             </motion.div>
           </Container>
         </GradientBox>
 
-        <Container maxWidth="lg">
-          <Box sx={{ my: 12 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-            >
-              <Typography variant="h2" gutterBottom textAlign="center" sx={{ mb: 6 }}>
-                Features
-              </Typography>
-            </motion.div>
-            <Grid container spacing={4}>
-              {[
-                { icon: <Devices fontSize="large" />, title: "AI-Powered Clinical Trial Matching", description: "Personalized matching and real-time updates on new clinical trials." },
-                { icon: <Psychology fontSize="large" />, title: "Simplified Medical Information", description: "We use NLP to rewrite complex medical information into easy-to-understand language." },
-                { icon: <MenuBook fontSize="large" />, title: "Educational Resources", description: "Access to articles and infographics to help understand diagnoses and treatment options." },
-                { icon: <Dashboard fontSize="large" />, title: "Health Data Dashboard", description: "A personalized dashboard to track health data and clinical trial participation." },
-                { icon: <Assistant fontSize="large" />, title: "Virtual Health Assistant", description: "AI-powered assistant to answer queries and provide support throughout your health journey." },
-                { icon: <Update fontSize="large" />, title: "Real-Time Updates", description: "Stay informed with the latest clinical trial opportunities as they become available." },
-              ].map((feature, index) => (
-                <Grid item xs={12} md={4} key={index}>
-                  <FeatureCard {...feature} />
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
 
+
+        {/* Main Content */}
+        <Container maxWidth="lg">
+          {/* Features Section */}
+          <FeaturesSection />
+      
+          {/* Divider */}
+          <EnhancedDivider />
+
+          {/* Service Explanation Section */}
           <ServiceExplanation />
 
-          <ContactForm />
+          {/* Divider */}
+          <EnhancedDivider />
+           
+          <EnhancedCTASection />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: 'easeInOut' }}
-          >
-            <Box 
-              sx={{ 
-                my: 12, 
-                textAlign: "center", 
-                position: 'relative', 
-                py: 8, 
-                bgcolor: darkMode ? '' : 'background.default', // Updated to use theme-aware background
-                overflow: 'hidden' 
-              }}
-            >
-              {/* Parallax Background Effect */}
-              <motion.div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  opacity: 0.15,
-                  zIndex: -1,
-                }}
-                animate={{ y: [0, 15, 0] }}
-                transition={{ duration: 6, ease: 'easeInOut', loop: Infinity }}
-              />
+ 
 
-              {/* Section Title */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-              >
-                <Typography 
-                  variant="h2" 
-                  gutterBottom 
-                  textAlign="center" 
-                  sx={{ mb: 4, color: darkMode ? 'text.primary' : 'text.secondary', fontWeight: 'bold' }} // Updated to use theme-aware text color
-                >
-                  Start Your Journey with VaccinityAI
-                </Typography>
-              </motion.div>
+          <EnhancedDivider />
 
-              {/* Call to Action Buttons */}
-              <Grid container spacing={4} justifyContent="center">
-                <Grid item>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.5 }}
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
-                      transition={{ type: 'spring', stiffness: 200 }}
-                    >
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="large"
-                        sx={{
-                          py: 2,
-                          px: 6,
-                          fontSize: '1.2rem',
-                          borderRadius: 50,
-                          borderColor: 'primary.main',
-                          color: darkMode ? 'text.primary' : 'text.secondary', // Updated to use theme-aware text color
-                          transition: 'all 0.3s ease',
-                          boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
-                          position: 'relative',
-                          '&:hover': {
-                            backgroundColor: '#FF5E84',
-                            color: 'white',
-                            transform: 'translateY(-5px)',
-                            boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
-                          },
-                        }}
-                        onClick={handleCheckout}
-                      >
-                        {rippleEffect && (
-                          <motion.span
-                            style={{
-                              position: 'absolute',
-                              top: '50%',
-                              left: '50%',
-                              width: '300%',
-                              height: '300%',
-                              background: 'rgba(255, 94, 132, 0.4)',
-                              borderRadius: '50%',
-                              transform: 'translate(-50%, -50%)',
-                              zIndex: 0,
-                            }}
-                            initial={{ scale: 0, opacity: 1 }}
-                            animate={{ scale: 1, opacity: 0 }}
-                            transition={{ duration: 0.5 }}
-                          />
-                        )}
-                        <RocketLaunchIcon sx={{ fontSize: '1.5rem', mr: 1 }} />
-                        Join VaccinityAI
-                      </Button>
-                    </motion.div>
-                  </motion.div>
-                </Grid>
+                   {/* Contact Form Section */}
+                   <ContactForm />
 
-                {/* Additional CTA Button */}
-                <Grid item>
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: 0.6 }}
-                  >
-                    <motion.div
-                      whileHover={{ scale: 1.05, rotateX: 10, rotateY: 10 }}
-                      transition={{ type: 'spring', stiffness: 200 }}
-                    >
-                      <Button
-                         variant="outlined"
-                         color="primary"
-                         size="large"
-                         sx={{
-                           py: 2,
-                           px: 6,
-                           fontSize: '1.2rem',
-                           borderRadius: 50,
-                           borderColor: 'primary.main',
-                           color: darkMode ? 'text.primary' : 'text.secondary', // Updated to use theme-aware text color
-                           transition: 'all 0.3s ease',
-                           boxShadow: rippleEffect ? '0 0 15px rgba(255, 94, 132, 0.8)' : '0 0 8px rgba(255, 94, 132, 0.3)',
-                           position: 'relative',
-                           '&:hover': {
-                             backgroundColor: '#FF5E84',
-                             color: 'white',
-                             transform: 'translateY(-5px)',
-                             boxShadow: '0px 6px 20px rgba(255, 94, 132, 0.6)',
-                           },
-                         }}
-                        onClick={() => console.log('Explore More')}
-                      >
-                        Explore Features
-                      </Button>
-                    </motion.div>
-                  </motion.div>
-                </Grid>
-              </Grid>
-            </Box>
-          </motion.div>
+          {/* Call to Action Section with Parallax Effect */}
+          
+      
         </Container>
 
+        {/* Modal for Sign-In Prompt */}
         <Modal
           open={openModal}
           onClose={() => setOpenModal(false)}
@@ -797,7 +578,9 @@ export default function Home() {
           </Fade>
         </Modal>
 
+        {/* Footer Section */}
         <Footer darkMode={darkMode} />
+        <FloatingChatbot />
       </Container>
     </ThemeProvider>
   );

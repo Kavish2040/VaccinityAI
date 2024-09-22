@@ -16,6 +16,8 @@ import { SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Image from "next/image";
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Person, LocationOn, Science, Group, Business, ExpandMore, ExpandLess } from '@mui/icons-material';
+import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
+
 
 const theme = createTheme({
     palette: {
@@ -494,7 +496,9 @@ export default function Generate() {
                         )}
                     </Paper>
                 </Box>
+             
             </Container>
+            <FloatingChatbot />
         </ThemeProvider>
     );
 }

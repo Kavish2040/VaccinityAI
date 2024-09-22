@@ -4,7 +4,7 @@ import axios from 'axios';
 export async function POST(req) {
     try {
         const { questions, answers, eligibilityCriteria } = await req.json();
-        
+        console.log("yele" +  questions, answers, eligibilityCriteria  )
         if (!questions || !answers || !eligibilityCriteria) {
             return NextResponse.json({ error: "Missing required data" }, { status: 400 });
         }
@@ -26,10 +26,11 @@ Respond in the following format:
 
 Example responses:
 Match
-Patient meets all inclusion criteria and does not violate any exclusion criteria.
+Patient meets all inclusion criteria and does not violate any exclusion criteria. Give full explanation why he/she matches
 
 No Match
-Patient does not meet the age requirement and has a contraindicated medical condition.`;
+Patient does not meet the age requirement and has a contraindicated medical condition.  Give full explanation why he/she does not matches
+`;
 
         const apiKey = process.env.CLAUDE_API_KEY;
         if (!apiKey) {
