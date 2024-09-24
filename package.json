@@ -41,6 +41,7 @@
     "tesseract.js": "^2.1.5"
   },
   "devDependencies": {
-    "concurrently": "^9.0.0"
+    "concurrently": "^9.0.0",
+    "eslint": "^9.11.1"
   }
 }
