@@ -24,6 +24,9 @@ import {
   TextField,
   Link,
   IconButton,
+  Grow,
+  Zoom,
+  CardMedia,
   Paper,
   Divider  // Added Divider here
 } from '@mui/material';
@@ -80,45 +83,48 @@ const FeatureCard = ({ icon, title, description }) => (
   </motion.div>
 );
 
+const AnimatedIcon = ({ icon, isActive }) => (
+  <motion.div
+    initial={{ scale: 1 }}
+    animate={{ scale: isActive ? 1.2 : 1, rotate: isActive ? 360 : 0 }}
+    transition={{ duration: 0.5 }}
+  >
+    {React.cloneElement(icon, { sx: { fontSize: 60, color: isActive ? 'primary.main' : 'text.secondary' } })}
+  </motion.div>
+);
+
 const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
-  <Box
+  <Card 
     onClick={onClick}
     sx={{
       cursor: 'pointer',
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
+      justifyContent: 'center',
       textAlign: 'center',
       transition: 'all 0.3s ease',
       transform: isActive ? 'scale(1.05)' : 'scale(1)',
+      boxShadow: isActive ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
       '&:hover': {
         transform: 'scale(1.05)',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
       },
     }}
   >
-    <Box
-      sx={{
-        color: isActive ? 'primary.main' : 'text.secondary',
-        transition: 'color 0.3s ease',
-      }}
-    >
-      {React.cloneElement(icon, { sx: { fontSize: 60 } })}
-    </Box>
-    <Typography
-      variant="h6"
-      color={isActive ? 'primary.main' : 'text.primary'}
-      sx={{ mt: 2, fontWeight: 'bold' }}
-    >
-      {title}
-    </Typography>
-    {isActive && (
-      <Box sx={{ mt: 2, maxWidth: '250px' }}>
-        <Typography variant="body2" color="text.secondary">
+    <CardContent>
+      <AnimatedIcon icon={icon} isActive={isActive} />
+      <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: isActive ? 'primary.main' : 'text.primary' }}>
+        {title}
+      </Typography>
+      <Grow in={isActive} timeout={500}>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, maxWidth: '250px' }}>
           {description}
         </Typography>
-      </Box>
-    )}
-  </Box>
+      </Grow>
+    </CardContent>
+  </Card>
 );
 
 const ServiceExplanation = () => {
@@ -130,13 +136,20 @@ const ServiceExplanation = () => {
     { icon: <Notifications />, title: "Stay Informed", description: "Receive updates, educational resources, and support throughout your journey." },
   ];
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prevStep) => (prevStep + 1) % steps.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [steps.length]);
+
   return (
-    <Box sx={{ py: 10 }}>
+    <Box sx={{ py: 10, bgcolor: 'background.default' }}>
       <Container maxWidth="lg">
         <Typography variant="h2" gutterBottom textAlign="center" fontWeight="bold" mb={6}>
           How VaccinityAI Works
         </Typography>
-        <Box sx={{ position: 'relative', my: 8, mb:3 }}>
+        <Box sx={{ position: 'relative', my: 8, mb: 3 }}>
           <Box
             sx={{
               position: 'absolute',
@@ -144,28 +157,35 @@ const ServiceExplanation = () => {
               right: 0,
               height: '4px',
               bgcolor: 'grey.300',
-              top: '30px',
+              top: '50%',
+              transform: 'translateY(-50%)',
             }}
           />
-          <Box
-            sx={{
+          <motion.div
+            style={{
               position: 'absolute',
               left: 0,
               height: '4px',
-              bgcolor: 'primary.main',
-              top: '30px',
-              width: `${((activeStep + 1) / steps.length) * 100}%`,
-              transition: 'width 0.5s ease',
+              backgroundColor: '#8C52FF',
+              top: '50%',
+              transform: 'translateY(-50%)',
             }}
+            initial={{ width: 0 }}
+            animate={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
+            transition={{ duration: 0.5, ease: 'easeInOut' }}
           />
-          <Grid container spacing={4} sx={{ position: 'relative', zIndex: 1}}>
+          <Grid container spacing={4} sx={{ position: 'relative', zIndex: 1 }}>
             {steps.map((step, index) => (
-              <Grid item xs={12} md={4} key={index} mt={3}>
-                <TimelineStep
-                  {...step}
-                  isActive={index === activeStep}
-                  onClick={() => setActiveStep(index)}
-                />
+              <Grid item xs={12} md={4} key={index}>
+                <Zoom in={true} style={{ transitionDelay: `${index * 200}ms` }}>
+                  <div>
+                    <TimelineStep
+                      {...step}
+                      isActive={index === activeStep}
+                      onClick={() => setActiveStep(index)}
+                    />
+                  </div>
+                </Zoom>
               </Grid>
             ))}
           </Grid>
@@ -175,6 +195,18 @@ const ServiceExplanation = () => {
             variant="contained"
             color="primary"
             onClick={() => setActiveStep((prev) => (prev + 1) % steps.length)}
+            sx={{
+              px: 4,
+              py: 1.5,
+              borderRadius: '30px',
+              fontWeight: 'bold',
+              textTransform: 'none',
+              fontSize: '1.1rem',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 12px rgba(140, 82, 255, 0.3)',
+              },
+            }}
           >
             Next Step
           </Button>
@@ -183,7 +215,6 @@ const ServiceExplanation = () => {
     </Box>
   );
 };
-
 
 
 <ContactForm />

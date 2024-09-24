@@ -241,6 +241,7 @@ const ContactForm = () => {
                       mt: 2,
                       py: 2,
                       px: 6,
+                      mb:2,
                       borderRadius: '50px',
                       backgroundColor: purpleTheme.main,
                       color: 'white',
