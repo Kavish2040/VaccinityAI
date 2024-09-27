@@ -1,42 +1,97 @@
+// File: /pages/api/match.js or /app/api/match/route.js
+
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 export async function POST(req) {
     try {
         const { questions, answers, eligibilityCriteria } = await req.json();
-        console.log("yele" +  questions, answers, eligibilityCriteria  )
+
+        // Improved logging for debugging
+        console.log("Received Questions:", questions);
+        console.log("Received Answers:", answers);
+        console.log("Received Eligibility Criteria:", eligibilityCriteria);
+
+        // Validate the incoming data
         if (!questions || !answers || !eligibilityCriteria) {
             return NextResponse.json({ error: "Missing required data" }, { status: 400 });
         }
 
-        const prompt = `Given the following eligibility criteria for a clinical trial:
-${JSON.stringify(eligibilityCriteria, null, 2)}
+        // Ensure questions and answers are arrays of strings
+        if (!Array.isArray(questions) || !questions.every(q => typeof q === 'string')) {
+            return NextResponse.json({ error: "Invalid format for questions. Expected an array of strings." }, { status: 400 });
+        }
 
-And the following questions and answers from a potential participant:
-${questions.map((q, i) => `Q: ${q.text}\nA: ${answers[i]}`).join('\n\n')}
+        if (!Array.isArray(answers) || !answers.every(a => typeof a === 'string')) {
+            return NextResponse.json({ error: "Invalid format for answers. Expected an array of strings." }, { status: 400 });
+        }
 
-Determine if the participant matches the eligibility criteria. Consider the following:
-1. The answers provided may be detailed text responses, not just yes/no.
-2. Evaluate each answer carefully against the corresponding eligibility criterion.
-3. Consider both inclusion and exclusion criteria in your evaluation.
+        // Optional: Check if questions and answers lengths match
+        if (questions.length !== answers.length) {
+            return NextResponse.json({ error: "The number of questions and answers must match." }, { status: 400 });
+        }
 
-Respond in the following format:
-- If the participant matches, start with "Match" on its own line, followed by a brief explanation (1-2 sentences) on the next line.
-- If the participant does not match, start with "No Match" on its own line, followed by a brief explanation (1-2 sentences) on the next line.
+        // Construct the prompt for the API
+        const prompt = `
+You are tasked with evaluating whether a potential participant matches the eligibility criteria for a clinical trial based on their responses to a set of questions. Follow the instructions below meticulously to ensure an accurate assessment.
 
-Example responses:
-Match
-Patient meets all inclusion criteria and does not violate any exclusion criteria. Give full explanation why he/she matches
+**Eligibility Criteria:**
+${typeof eligibilityCriteria === 'string' ? eligibilityCriteria : JSON.stringify(eligibilityCriteria, null, 2)}
 
-No Match
-Patient does not meet the age requirement and has a contraindicated medical condition.  Give full explanation why he/she does not matches
-`;
+**Participant's Questions and Answers:**
+${questions.map((q, i) => `Q: ${q}\nA: ${answers[i]}`).join('\n\n')}
+
+**Evaluation Guidelines:**
+
+1. **Ignore Vague Questions:**
+   - **Definition:** Vague questions are general inquiries that do not reference specific conditions, diseases, or factors relevant to the eligibility criteria.
+   - **Examples to Ignore:**
+     - "Do you have any chronic illnesses that might interfere with the trial?"
+     - "Are there any health issues we should be aware of?"
+     - "Do you have any current infections?"
+   - **Action:** Completely disregard both the question and the corresponding answer if it matches or is similar to any of the above examples.
+
+2. **Focus on Specific Questions:**
+   - **Definition:** Specific questions directly correspond to particular inclusion or exclusion criteria and mention explicit conditions or factors.
+   - **Action:** Only consider answers to these specific questions when evaluating eligibility.
+
+3. **Assess Against Eligibility Criteria:**
+   - **Inclusion Criteria:** Verify that the participant meets all necessary inclusion requirements.
+   - **Exclusion Criteria:** Ensure the participant does not have any conditions or factors that would exclude them from the trial.
+
+4. **Detailed Evaluation:**
+   - **Match:** The participant satisfies all inclusion criteria and does not violate any exclusion criteria.
+   - **No Match:** The participant fails to meet one or more inclusion criteria or violates one or more exclusion criteria.
+
+5. **Response Format:**
+   - **If the Participant Matches:**
+    
+     Match
+     [Provide a concise explanation (1-2 sentences) highlighting how the participant meets all inclusion criteria and does not violate any exclusion criteria.]
+    
+   - **If the Participant Does Not Match:**
+     
+     No Match
+     [Provide a concise explanation (1-2 sentences) detailing which inclusion criteria are not met or which exclusion criteria are violated.]
+    
+
+**Important Instructions:**
+- **Exclusivity:** Do not reference, consider, or incorporate any information from vague questions in your evaluation.
+- **Clarity:** Ensure that the explanation is clear, direct, and specifically tied to the eligibility criteria.
+- **Brevity:** Keep explanations concise, limiting them to 1-2 sentences.
+
+**Example Responses:**
+
+*Match*
+`
 
         const apiKey = process.env.CLAUDE_API_KEY;
         if (!apiKey) {
+            console.error('API key is missing.');
             return NextResponse.json({ error: 'API key missing.' }, { status: 500 });
         }
 
+        // Call the Anthropics API
         const response = await axios.post(
             'https://api.anthropic.com/v1/messages',
             {
@@ -54,11 +109,18 @@ Patient does not meet the age requirement and has a contraindicated medical cond
             }
         );
 
+        // Extract the generated text
         const generatedText = response.data.content[0].text;
         const lines = generatedText.trim().split('\n');
 
         let matchStatus = lines[0].trim();
-        let explanation = lines[1] ? lines[1].trim() : 'No explanation provided';
+        let explanation = lines.slice(1).join(' ').trim() || 'No explanation provided';
+
+        // Ensure the response format
+        if (!['Match', 'No Match'].includes(matchStatus)) {
+            console.warn('Unexpected match status:', matchStatus);
+            return NextResponse.json({ error: 'Unexpected response format from AI.' }, { status: 500 });
+        }
 
         return NextResponse.json({
             match: matchStatus === 'Match',

@@ -11,25 +11,63 @@ export async function POST(req) {
         }
 
         const prompt = `
-        For the given eligibility criteria, create a set of yes/no questions that can be presented to the user as part of a yes or no eligibility screening process. Each question should:
-            This is a pre trial set of questions to check if a patient is eligibile for a trial on a basic level. This is to match patients to clinical trials. ONLY ASK SUCH QUESTIONS THAT A USER WITHOUT A LOT OF KNOWLEDGE ABOUT HIS CONDITION CAN HAVE. this is just ot check basic match between them
-            Directly correspond to a specific criterion from the provided list.
-            Be phrased in a clear, concise manner that can be answered with a simple 'yes' or 'no'.
-            Be suitable for a checkbox format, where checking the box indicates 'yes' and leaving it unchecked indicates 'no'.
-            Avoid open-ended questions or those requiring numerical or text input.
-            Cover all relevant aspects of the eligibility criteria without redundancy.
-            Be worded in a way that is easily understandable to the average user, avoiding complex jargon where possible.
-            Only ask questions based on eligibility criteria that a person can easily know without consulting a medical professional. Do not ask vague or overly specific medical questions that require clinical knowledge or recent medical assessments. For example, avoid questions like "Have you not experienced clinically significant hemoptysis (coughing up blood) greater than 50ml per day within the last 3 months?" as most people would not be aware of such detailed medical information without a doctor's input. Only include questions that someone with a basic understanding of their condition can answer confidently. Do not use introductory phrases like "Here are the yes/no questions based on the eligibility criteria that a patient can answer without consulting a medical professional:"
-           DONT ASK ' Have you signed an informed consent form for the trial?' qeustions like these these questions are BEFORE THE PATIENT HAS BEEN MATCHED OR GONE THROUGH THE CLINCAL TRIAL.
-        Please format your response as a numbered list of questions, each beginning with 'Do you' or 'Are you' to ensure they can be answered via checkbox selection.
+Generate a set of yes/no questions for a clinical trial eligibility screening process based on the following criteria. Ensure that each question meets the guidelines below:
 
-        Eligibility Criteria:
-        ${criteria}
-        
-        Don't write anything like "Here is a set of yes/no questions that can be presented to the user as part of a checkbox-based eligibility screening process, based on the provided eligibility criteria:"—just give questions.
-     
-     
-        `;
+1. **Simplicity and Accessibility**:
+   - **Language**: Use clear, straightforward language suitable for individuals without medical training.
+   - **Structure**: Start each question with "Do you" or "Are you" to facilitate easy checkbox selection.
+   - **Terminology**: Avoid medical jargon. If a medical term is necessary, provide a simple explanation in parentheses.
+     - *Example*: Do you have a history of myocardial infarction (heart attack)?
+
+2. **Direct Alignment with Eligibility Criteria**:
+   - Each question must correspond directly to a specific eligibility criterion provided. do not make questions on VAGUE ELIGIBILITY CRITERIAS
+
+3. **Yes/No Format**:
+   - Frame questions to be answerable with a simple 'Yes' or 'No'.
+   - Ensure compatibility with a checkbox format where checking indicates 'Yes' and leaving it unchecked indicates 'No'.
+   - Avoid questions that require numerical answers or detailed explanations.
+
+4. **Patient-Centric Focus**:
+   - **Knowledge Level**: Only include questions that a patient can answer based on their personal knowledge and experiences at home.
+   - **Avoid Complexity**: Do not ask questions that require detailed medical information, recent clinical assessments, or professional medical judgment.
+     - *Do not include*: "Have you experienced clinically significant hemoptysis (coughing up blood) greater than 50ml per day within the last 3 months?"
+
+5. **Exclude Pre-Match and Irrelevant Questions**:
+   - Do not include questions related to trial consent or procedures that occur after eligibility is established.
+     - *Do not include*: "Have you signed an informed consent form for the trial?"
+
+6. **No Introductory or Explanatory Text**:
+   - Provide only the list of questions without any introductory statements or explanations.
+   - *Do not write*: "Here is a set of yes/no questions that can be presented to the user as part of a checkbox-based eligibility screening process, based on the provided eligibility criteria:"
+
+7. **Avoid Vague Questions**:
+   - **Specificity is Key**: Only ask questions that mention specific diseases or conditions that could cause exclusion. Avoid general or vague inquiries.
+     - *Do not include*: "Do you have any certain infections that would affect your eligibility?"
+     - *Include instead*: "Do you have a history of tuberculosis?"
+   - **Clear Conditions**: Ensure that each question targets a clearly defined condition or criterion.
+   - **No Ambiguity**: Avoid questions that are open to interpretation or require the user to make judgments beyond their personal knowledge.
+   - **Examples to Avoid,AVOID ANY QUESTION THAT LOOKS LIKE THIS OR IS STRUCTURED SIMILAR TO THIS**:
+     - "Do you have any chronic illnesses that might interfere with the trial?"
+     - "Are there any health issues we should be aware of?"
+     -  "Do you have any current infections?"
+     - "Have you tested negative for specific infections?"
+   - **Preferred Examples**:
+     - "Do you have diabetes?"
+     - "Have you been diagnosed with hypertension?"
+
+**Eligibility Criteria:**
+${criteria}
+
+**Output Format:**
+- Present the questions as a numbered list.
+- If a question includes a medical or complex term, add a brief, simple explanation in parentheses next to the term.
+  - *Example*: Are you currently experiencing shortness of breath?
+
+**Example to Avoid:**
+- "Have you not experienced clinically significant hemoptysis (coughing up blood) greater than 50ml per day within the last 3 months?"
+`;
+
+
 
         // Initialize OpenAI client
         const openai = new OpenAI({
@@ -44,8 +82,6 @@ export async function POST(req) {
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [{ role: 'user', content: prompt }],
-            max_tokens: 1024,
-            temperature: 0.7,
         });
 
         const generatedText = response.choices[0].message.content;

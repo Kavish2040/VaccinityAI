@@ -16,16 +16,17 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 import { useUser } from "@clerk/nextjs"; // Import Clerk's useUser for user details
+import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
 
 // Firebase configuration
 const firebaseConfig = {
-        apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
-        authDomain: "vaccinityai-7941b.firebaseapp.com",
-        projectId: "vaccinityai-7941b",
-        storageBucket: "vaccinityai-7941b.appspot.com",
-        messagingSenderId: "1011572729936",
-        appId: "1:1011572729936:web:97103ef7f3c638f2a20955",
-        measurementId: "G-J0JVXZ72HD"
+  apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
+  authDomain: "vaccinityai-7941b.firebaseapp.com",
+  projectId: "vaccinityai-7941b",
+  storageBucket: "vaccinityai-7941b.appspot.com",
+  messagingSenderId: "1011572729936",
+  appId: "1:1011572729936:web:97103ef7f3c638f2a20955",
+  measurementId: "G-J0JVXZ72HD"
 };
 
 // Initialize Firebase
@@ -151,12 +152,14 @@ export default function Eligibility() {
       setSnackbarOpen(true);
       return;
     }
-    console.log("here12"+questions)
     try {
+      // Modify the questions to send only the text
+      const questionsTexts = questions.map(q => q.text);
+
       const response = await fetch('/api/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questions, answers, eligibilityCriteria }),
+        body: JSON.stringify({ questions: questionsTexts, answers, eligibilityCriteria }),
       });
 
       if (!response.ok) throw new Error(`Error fetching response: ${response.statusText}`);
@@ -179,7 +182,7 @@ export default function Eligibility() {
     try {
       const docRef = await addDoc(collection(db, "savedStudies"), {
         eligibilityCriteria,
-        questions,
+        questions, // You might want to save only the texts here as well
         answers,
         matchResult,
         timestamp: new Date(),
@@ -208,136 +211,140 @@ export default function Eligibility() {
     setDialogOpen(false);
   };
 
-    return (
-        <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <Box sx={{ pb: 10 }}> {/* Padding to accommodate fixed save bar */}
-                {/* App Bar */}
-                <AppBar position="sticky" sx={{ background: 'transparent', boxShadow: 'none' }}>
-                    <Toolbar>
-                        <IconButton edge="start" color="inherit" onClick={() => router.back()} sx={{ mr: 2 }}>
-                            <ArrowBackIosNewIcon />
-                        </IconButton>
-                        <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'text.primary' }}>
-                            Clinical Trial Eligibility
-                        </Typography>
-                    </Toolbar>
-                </AppBar>
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ pb: 10 }}> {/* Padding to accommodate fixed save bar */}
+        {/* App Bar */}
+        <AppBar position="sticky" sx={{ background: 'transparent', boxShadow: 'none' }}>
+          <Toolbar>
+            <IconButton edge="start" color="inherit" onClick={() => router.back()} sx={{ mr: 2 }}>
+              <ArrowBackIosNewIcon />
+            </IconButton>
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'text.primary' }}>
+              Clinical Trial Eligibility
+            </Typography>
+          </Toolbar>
+        </AppBar>
 
-                {/* Main Content */}
-                <Container maxWidth="md" sx={{ mt: 4 }}>
-                    <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', color: 'primary.main' }}>
-                        Eligibility Criteria Questions
-                    </Typography>
-                    
-                    {loading ? (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-                            <CircularProgress color="primary" size={60} />
-                        </Box>
-                    ) : (
-                        <>
-                            {/* Progress Bar */}
-                            <Box sx={{ mb: 4 }}>
-                                <LinearProgress variant="determinate" value={progress} sx={{ height: 10, borderRadius: 5 }} />
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'right' }}>
-                                    {`${Math.round(progress)}% Complete`}
-                                </Typography>
-                            </Box>
-                            
-                            {/* Questions and Answers */}
-                            {questions.map((question, index) => (
-                                <Box key={index} sx={{ mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
-                                    <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                                        Question {index + 1}
-                                    </Typography>
-                                    <Typography variant="body1" sx={{ mb: 2 }}>
-                                        {question.text}
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        variant="outlined"
-                                        value={answers[index]}
-                                        onChange={(e) => handleAnswerChange(index, e.target.value)}
-                                        placeholder="Type your answer here"
-                                        multiline
-                                        rows={3}
-                                    />
-                                </Box>
-                            ))}
-
-                            {/* Submit Button */}
-                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={progress !== 100}
-                                    variant="contained"
-                                    color="primary"
-                                    size="large"
-                                    sx={{ px: 4, py: 1.5 }}
-                                >
-                                    Submit Answers
-                                </Button>
-                            </Box>
-                        </>
-                    )}
-                </Container>
-
-                {/* Modal Dialog for Match Result */}
-                <Dialog
-                    open={dialogOpen}
-                    onClose={handleDialogClose}
-                    aria-labelledby="match-result-dialog-title"
-                    aria-describedby="match-result-dialog-description"
-                >
-                    <DialogTitle id="match-result-dialog-title" sx={{ display: 'flex', alignItems: 'center' }}>
-                        {matchResult?.match ? (
-                            <>
-                                <CheckCircleOutlineIcon color="success" sx={{ mr: 1 }} />
-                                Match Found
-                            </>
-                        ) : (
-                            <>
-                                <CancelOutlinedIcon color="error" sx={{ mr: 1 }} />
-                                No Match
-                            </>
-                        )}
-                    </DialogTitle>
-                    <DialogContent>
-                        <DialogContentText id="match-result-dialog-description">
-                            {matchResult?.explanation || "No additional information provided."}
-                        </DialogContentText>
-                    </DialogContent>
-                    <DialogActions>
-                        {!matchResult?.match ? (
-                            <Button onClick={handleDialogClose} color="primary">
-                                Close
-                            </Button>
-                        ) : (
-                            <Button
-                                onClick={handleSaveStudy}
-                                color="primary"
-                                variant="contained"
-                                startIcon={<SaveIcon />}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? 'Saving...' : 'Save Study'}
-                            </Button>
-                        )}
-                    </DialogActions>
-                </Dialog>
-
-                {/* Snackbar for Notifications */}
-                <Snackbar 
-                    open={snackbarOpen} 
-                    autoHideDuration={6000} 
-                    onClose={handleSnackbarClose}
-                    anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-                >
-                    <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-                        {snackbarMessage}
-                    </Alert>
-                </Snackbar>
+        {/* Main Content */}
+        <Container maxWidth="md" sx={{ mt: 4 }}>
+          <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', color: 'primary.main' }}>
+            Eligibility Criteria Questions
+          </Typography>
+          
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+              <CircularProgress color="primary" size={60} />
             </Box>
-        </ThemeProvider>
-    );
+          ) : (
+            <>
+              {/* Progress Bar */}
+              <Box sx={{ mb: 4 }}>
+                <LinearProgress variant="determinate" value={progress} sx={{ height: 10, borderRadius: 5,  backgroundColor: '#e0e0e0', // Optional: Light gray track color
+    '& .MuiLinearProgress-bar': {
+      backgroundColor: '#4caf50', // Green bar color
+    },  }} />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'right' }}>
+                  {`${Math.round(progress)}% Complete`}
+                </Typography>
+              </Box>
+              
+              {/* Questions and Answers */}
+              {questions.map((question, index) => (
+                <Box key={index} sx={{ mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
+                    Question {index + 1}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    {question.text}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    value={answers[index]}
+                    onChange={(e) => handleAnswerChange(index, e.target.value)}
+                    placeholder="Type your answer here"
+                    multiline
+                    rows={3}
+                  />
+                </Box>
+              ))}
+
+              {/* Submit Button */}
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={progress !== 100}
+                  variant="contained"
+                  color="primary"
+                  size="large"
+                  sx={{ px: 4, py: 1.5 }}
+                >
+                  Submit Answers
+                </Button>
+              </Box>
+            </>
+          )}
+        </Container>
+
+        {/* Modal Dialog for Match Result */}
+        <Dialog
+          open={dialogOpen}
+          onClose={handleDialogClose}
+          aria-labelledby="match-result-dialog-title"
+          aria-describedby="match-result-dialog-description"
+        >
+          <DialogTitle id="match-result-dialog-title" sx={{ display: 'flex', alignItems: 'center' }}>
+            {matchResult?.match ? (
+              <>
+                <CheckCircleOutlineIcon color="success" sx={{ mr: 1 }} />
+                Match Found
+              </>
+            ) : (
+              <>
+                <CancelOutlinedIcon color="error" sx={{ mr: 1 }} />
+                No Match
+              </>
+            )}
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="match-result-dialog-description">
+              {matchResult?.explanation || "No additional information provided."}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            {!matchResult?.match ? (
+              <Button onClick={handleDialogClose} color="primary">
+                Close
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSaveStudy}
+                color="primary"
+                variant="contained"
+                startIcon={<SaveIcon />}
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Study'}
+              </Button>
+            )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for Notifications */}
+        <Snackbar 
+          open={snackbarOpen} 
+          autoHideDuration={6000} 
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        >
+          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </Box>
+      <FloatingChatbot />
+    </ThemeProvider>
+  );
 }

@@ -14,6 +14,8 @@ import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import { useUser, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
+import MenuIcon from '@mui/icons-material/Menu';
+import ImprovedAppBar from '@/app/ImprovedAppBar/page.js';
 
 // Define a modern and clean theme
 const theme = createTheme({
@@ -585,26 +587,8 @@ export default function Generate() {
         <ThemeProvider theme={theme}>
             <CssBaseline />
             {/* Redesigned AppBar */}
-            <AppBar position="relative">
-                <Toolbar sx={{ justifyContent: 'space-between', height: 60, mt:1.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        <Image src="/logo1.png" alt="Vaccinity AI Logo" width={215} height={110} priority />
-                    </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-                        <Button color="inherit" onClick={() => router.push('/')}>Home</Button>
-                        <Button color="inherit" onClick={() => router.push('/dashboard')}>Dashboard</Button>
-                        <SignedOut>
-                            <Button color="secondary" variant="contained" onClick={() => router.push('/sign-up')}>
-                                Sign Up
-                            </Button>
-                        </SignedOut>
-                        <SignedIn>
-                            <UserButton />
-                        </SignedIn>
-                    </Box>
-                </Toolbar>
-            </AppBar>
-
+            
+            <ImprovedAppBar />
             <Container maxWidth="xl" sx={{ py: 4 }}>
                 {/* Main Content */}
                 <motion.div
