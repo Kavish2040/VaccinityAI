@@ -382,7 +382,9 @@ export default function Generate() {
 
     const handleCheckEligibility = () => {
         if (selectedStudy && selectedStudy.eligibilityCriteria) {
-            router.push(`/eligibility?eligibilityCriteria=${encodeURIComponent(JSON.stringify(selectedStudy.eligibilityCriteria))}`);
+            const eligibilityCriteriaParam = encodeURIComponent(JSON.stringify(selectedStudy.eligibilityCriteria));
+            const leadSponsorParam = encodeURIComponent(selectedStudy.leadSponsor);
+            router.push(`/eligibility?eligibilityCriteria=${eligibilityCriteriaParam}&leadSponsor=${leadSponsorParam}`);
         } else {
             console.log("No study selected or eligibility criteria is missing");
         }

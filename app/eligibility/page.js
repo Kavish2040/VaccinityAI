@@ -1,3 +1,5 @@
+// app/eligibility/page.js
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -73,7 +75,9 @@ export default function Eligibility() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useUser(); // Clerk user data
+
   const [eligibilityCriteria, setEligibilityCriteria] = useState('');
+  const [leadSponsor, setLeadSponsor] = useState(''); // New state variable for leadSponsor
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -88,6 +92,19 @@ export default function Eligibility() {
   // Fetch eligibility criteria and corresponding questions
   useEffect(() => {
     const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
+    const leadSponsorParam = searchParams.get('leadSponsor');
+
+    // Decode and set leadSponsor
+    if (leadSponsorParam) {
+      try {
+        const decodedSponsor = decodeURIComponent(leadSponsorParam);
+        setLeadSponsor(decodedSponsor.toLowerCase());
+      } catch (error) {
+        console.error('Error decoding lead sponsor:', error);
+        setLeadSponsor(leadSponsorParam);
+      }
+    }
+
     if (eligibilityCriteriaParam) {
       try {
         const decodedParam = decodeURIComponent(eligibilityCriteriaParam);
@@ -180,6 +197,8 @@ export default function Eligibility() {
     if (!matchResult || !user?.id) return;
     setIsSaving(true);
     try {
+      const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+
       const docRef = await addDoc(collection(db, "savedStudies"), {
         eligibilityCriteria,
         questions, // You might want to save only the texts here as well
@@ -187,6 +206,8 @@ export default function Eligibility() {
         matchResult,
         timestamp: new Date(),
         userId: user.id,
+        userName: userName, // Include user's name
+        leadSponsor: leadSponsor, // Include lead sponsor
       });
       console.log("Document written with ID: ", docRef.id);
       setSnackbarMessage("Study saved successfully!");
@@ -214,7 +235,7 @@ export default function Eligibility() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ pb: 10 }}> {/* Padding to accommodate fixed save bar */}
+      <Box sx={{ pb: 10 }}>
         {/* App Bar */}
         <AppBar position="sticky" sx={{ background: 'transparent', boxShadow: 'none' }}>
           <Toolbar>
@@ -232,7 +253,7 @@ export default function Eligibility() {
           <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', color: 'primary.main' }}>
             Eligibility Criteria Questions
           </Typography>
-          
+
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
               <CircularProgress color="primary" size={60} />
@@ -241,15 +262,23 @@ export default function Eligibility() {
             <>
               {/* Progress Bar */}
               <Box sx={{ mb: 4 }}>
-                <LinearProgress variant="determinate" value={progress} sx={{ height: 10, borderRadius: 5,  backgroundColor: '#e0e0e0', // Optional: Light gray track color
-    '& .MuiLinearProgress-bar': {
-      backgroundColor: '#4caf50', // Green bar color
-    },  }} />
+                <LinearProgress
+                  variant="determinate"
+                  value={progress}
+                  sx={{
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: '#e0e0e0',
+                    '& .MuiLinearProgress-bar': {
+                      backgroundColor: '#4caf50',
+                    },
+                  }}
+                />
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'right' }}>
                   {`${Math.round(progress)}% Complete`}
                 </Typography>
               </Box>
-              
+
               {/* Questions and Answers */}
               {questions.map((question, index) => (
                 <Box key={index} sx={{ mb: 4, p: 3, bgcolor: 'background.paper', borderRadius: 2 }}>
@@ -333,9 +362,9 @@ export default function Eligibility() {
         </Dialog>
 
         {/* Snackbar for Notifications */}
-        <Snackbar 
-          open={snackbarOpen} 
-          autoHideDuration={6000} 
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
           onClose={handleSnackbarClose}
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
         >

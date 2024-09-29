@@ -18,6 +18,9 @@ Generate a set of yes/no questions for a clinical trial eligibility screening pr
    - **Structure**: Start each question with "Do you" or "Are you" to facilitate easy checkbox selection.
    - **Terminology**: Avoid medical jargon. If a medical term is necessary, provide a simple explanation in parentheses.
      - *Example*: Do you have a history of myocardial infarction (heart attack)?
+   - DONT MAKE QUESTIONS ON VAGUE THINGS LIKE "CERTAIN MEDICATIONS OR CERTAIN INFECTIONS" THAT MAY EXCLUDE THE PATIENT FROM THE STUDY ONLY WRITE A QUESTION IF A SPECIFIC MEDICATION OR INFECTION NAME IS GIVEN OTHERWISE AVOID IT. AVOID QUESTIONS LIKE THESE:  Are you using any specific medications that might exclude you from the trial? or  Do you have any infections that might exclude you from the trial? 
+    The patient does not have details about medications that may exclude them from the trial so we CANNOT AT ALL cost ask such questions
+   - DONT MAKE QUESTION WITH CERTAIN SPECFIC VALUES LIKE LEVEL ABOVE X% OR ABC Value of r.xy ... AVOID SUCH QUESTIONS, ONLY ASK THOSE QUESTION THAT A PERSON WITH BASIC KNOWLEDGE ABOUT HIS CONDITION CAN ANSWER WITHOUT HAVING TO ASK HIS DOCTOR 
 
 2. **Direct Alignment with Eligibility Criteria**:
    - Each question must correspond directly to a specific eligibility criterion provided. do not make questions on VAGUE ELIGIBILITY CRITERIAS
@@ -46,11 +49,12 @@ Generate a set of yes/no questions for a clinical trial eligibility screening pr
      - *Include instead*: "Do you have a history of tuberculosis?"
    - **Clear Conditions**: Ensure that each question targets a clearly defined condition or criterion.
    - **No Ambiguity**: Avoid questions that are open to interpretation or require the user to make judgments beyond their personal knowledge.
-   - **Examples to Avoid,AVOID ANY QUESTION THAT LOOKS LIKE THIS OR IS STRUCTURED SIMILAR TO THIS**:
+   - **Examples to Avoid,AVOID ANY QUESTION THAT LOOKS LIKE THIS OR IS IMPLYING THE SAME THING OR IS STRUCTURED SIMILAR TO THIS**:
      - "Do you have any chronic illnesses that might interfere with the trial?"
      - "Are there any health issues we should be aware of?"
      -  "Do you have any current infections?"
      - "Have you tested negative for specific infections?"
+     - "Are you using any specific medications that might exclude you from the trial?"
    - **Preferred Examples**:
      - "Do you have diabetes?"
      - "Have you been diagnosed with hypertension?"

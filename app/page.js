@@ -741,7 +741,7 @@ export default function Home() {
                 sx={{ mt: 3 }}
                 onClick={() => {
                   setOpenModal(false);
-                  router.push('/sign-in');
+                  router.push('/sign-up');
                 }}
               >
                 Set Up Profile

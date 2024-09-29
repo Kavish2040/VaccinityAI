@@ -1,4 +1,5 @@
-'use client';
+// app/dashboard/page.js
+"use client";
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,15 @@ import ScienceIcon from '@mui/icons-material/Science';
 import MenuIcon from '@mui/icons-material/Menu';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import { getFirestore, collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+  doc,
+} from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
 // Firebase configuration
@@ -98,10 +107,38 @@ const theme = createTheme({
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user } = useUser();
+  const { isLoaded, user } = useUser();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [savedStudies, setSavedStudies] = useState([]);
   const [loadingStudies, setLoadingStudies] = useState(true);
+  const [checkingUserType, setCheckingUserType] = useState(true);
+
+  // Check if the user is a patient; redirect if not
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('Dashboard: User is loaded:', user);
+      if (user) {
+        const userType = user.unsafeMetadata?.userType;
+        console.log('Dashboard: User type:', userType);
+
+        if (userType === 'patient') {
+          setCheckingUserType(false);
+        } else if (userType === 'pharmacy') {
+          // Redirect pharmacy users to their dashboard
+          router.push('/pharmacy-dashboard');
+        } else if (userType === undefined) {
+          console.warn('User type is undefined. Redirecting to complete-signup.');
+          router.push('/complete-signup');
+        } else {
+          console.warn('User type is invalid. Redirecting to home.');
+          router.push('/');
+        }
+      } else {
+        // If no user is logged in, redirect to sign-in page
+        router.push('/sign-in');
+      }
+    }
+  }, [isLoaded, user, router]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -113,10 +150,12 @@ export default function Dashboard() {
       <List>
         {[
           { text: 'Home', icon: <HomeIcon />, onClick: () => router.push('/') },
-          { text: 'Logout', icon: <LogoutIcon />, onClick: () => router.push('/logout') },
+          { text: 'Logout', icon: <LogoutIcon />, onClick: () => router.push('/sign-out') },
         ].map((item) => (
           <ListItem button key={item.text} onClick={item.onClick}>
-            <ListItemIcon sx={{ color: theme.palette.primary.main }}>{item.icon}</ListItemIcon>
+            <ListItemIcon sx={{ color: theme.palette.primary.main }}>
+              {item.icon}
+            </ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
@@ -125,24 +164,32 @@ export default function Dashboard() {
   );
 
   const dashboardItems = [
-    { title: 'Clinical Trials', description: 'Access and monitor ongoing clinical trials', icon: <ScienceIcon fontSize="large" />, link: '/generate' },
+    {
+      title: 'Clinical Trials',
+      description: 'Access and monitor ongoing clinical trials',
+      icon: <ScienceIcon fontSize="large" />,
+      link: '/generate',
+    },
   ];
 
   // Fetch saved studies from Firebase
   useEffect(() => {
     const fetchSavedStudies = async () => {
       if (!user?.id) {
-        console.log("User not found, cannot fetch saved studies");
+        console.log('User not found, cannot fetch saved studies');
         return;
       }
 
       setLoadingStudies(true);
       try {
-        const q = query(collection(db, "savedStudies"), where("userId", "==", user.id));
+        const q = query(
+          collection(db, 'savedStudies'),
+          where('userId', '==', user.id)
+        );
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          console.log("No saved studies found for this user.");
+          console.log('No saved studies found for this user.');
         }
 
         const studies = [];
@@ -151,7 +198,7 @@ export default function Dashboard() {
         });
         setSavedStudies(studies);
       } catch (error) {
-        console.error("Error fetching saved studies: ", error);
+        console.error('Error fetching saved studies: ', error);
       } finally {
         setLoadingStudies(false);
       }
@@ -165,19 +212,26 @@ export default function Dashboard() {
   // Handle deleting a study
   const handleDeleteStudy = async (id) => {
     try {
-      await deleteDoc(doc(db, "savedStudies", id));
-      setSavedStudies(savedStudies.filter(study => study.id !== id));
+      await deleteDoc(doc(db, 'savedStudies', id));
+      setSavedStudies(savedStudies.filter((study) => study.id !== id));
     } catch (error) {
-      console.error("Error deleting study: ", error);
+      console.error('Error deleting study: ', error);
     }
   };
+
+  if (checkingUserType) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
         {/* App Bar */}
-        <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+        <AppBar
+          position="fixed"
+          sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        >
           <Toolbar>
             <IconButton
               color="inherit"
@@ -188,7 +242,12 @@ export default function Dashboard() {
             >
               <MenuIcon />
             </IconButton>
-            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
               Dashboard
             </Typography>
           </Toolbar>
@@ -204,7 +263,10 @@ export default function Dashboard() {
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { width: drawerWidth, boxSizing: 'border-box' },
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
           }}
         >
           {drawer}
@@ -215,16 +277,33 @@ export default function Dashboard() {
             display: { xs: 'none', sm: 'block' },
             width: drawerWidth,
             flexShrink: 0,
-            [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+            [`& .MuiDrawer-paper`]: {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
           }}
         >
           {drawer}
         </Drawer>
 
         {/* Main Content */}
-        <Box component="main" sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            width: { sm: `calc(100% - ${drawerWidth}px)` },
+          }}
+        >
           <Toolbar />
-          <Typography variant="h4" sx={{ mb: 4, color: theme.palette.primary.main, fontWeight: 'bold' }}>
+          <Typography
+            variant="h4"
+            sx={{
+              mb: 4,
+              color: theme.palette.primary.main,
+              fontWeight: 'bold',
+            }}
+          >
             Welcome back, {user?.firstName || 'User'}!
           </Typography>
 
@@ -233,10 +312,17 @@ export default function Dashboard() {
             {dashboardItems.map((item, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <Card>
-                  <CardContent sx={{ p: 3, cursor: 'pointer' }} onClick={() => router.push(item.link)}>
+                  <CardContent
+                    sx={{ p: 3, cursor: 'pointer' }}
+                    onClick={() => router.push(item.link)}
+                  >
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                       {item.icon}
-                      <Typography variant="h6" component="div" sx={{ ml: 2 }}>
+                      <Typography
+                        variant="h6"
+                        component="div"
+                        sx={{ ml: 2 }}
+                      >
                         {item.title}
                       </Typography>
                     </Box>
@@ -250,7 +336,14 @@ export default function Dashboard() {
           </Grid>
 
           {/* Saved Studies Section */}
-          <Typography variant="h5" sx={{ mb: 3, color: theme.palette.primary.main, fontWeight: 'bold' }}>
+          <Typography
+            variant="h5"
+            sx={{
+              mb: 3,
+              color: theme.palette.primary.main,
+              fontWeight: 'bold',
+            }}
+          >
             Your Saved Studies
           </Typography>
           <Grid container spacing={3}>
@@ -264,28 +357,52 @@ export default function Dashboard() {
                     display: 'flex',
                     flexDirection: 'column',
                     position: 'relative',
-                    transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
+                    transition:
+                      'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
                     '&:hover': {
                       transform: 'translateY(-5px)',
                       boxShadow: '0 10px 20px rgba(0,0,0,0.2)',
                     },
                   }}
                 >
-                  <Typography variant="h6" gutterBottom sx={{ color: theme.palette.primary.main }}>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ color: theme.palette.primary.main }}
+                  >
                     Study ID: {study.id.slice(0, 8)}...
                   </Typography>
                   <Typography variant="body2" sx={{ mb: 2, flexGrow: 1 }}>
                     {study.eligibilityCriteria.slice(0, 100)}...
                   </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="subtitle2" sx={{ color: study.matchResult.match ? 'success.main' : 'error.main' }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        color: study.matchResult.match
+                          ? 'success.main'
+                          : 'error.main',
+                      }}
+                    >
                       Match: {study.matchResult.match ? 'Yes' : 'No'}
                     </Typography>
                     <Box>
-                      <IconButton color="primary" onClick={() => router.push(`/study/${study.id}`)}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => router.push(`/study/${study.id}`)}
+                      >
                         <VisibilityIcon />
                       </IconButton>
-                      <IconButton color="error" onClick={() => handleDeleteStudy(study.id)}>
+                      <IconButton
+                        color="error"
+                        onClick={() => handleDeleteStudy(study.id)}
+                      >
                         <DeleteIcon />
                       </IconButton>
                     </Box>

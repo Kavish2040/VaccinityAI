@@ -43,47 +43,42 @@ ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i]}`).join('\n\n')}
 
 **Evaluation Guidelines:**
 
-1. **Ignore Vague Questions:**
-   - **Definition:** Vague questions are general inquiries that do not reference specific conditions, diseases, or factors relevant to the eligibility criteria.
-   - **Examples to Ignore:**
-     - "Do you have any chronic illnesses that might interfere with the trial?"
-     - "Are there any health issues we should be aware of?"
-     - "Do you have any current infections?"
-   - **Action:** Completely disregard both the question and the corresponding answer if it matches or is similar to any of the above examples.
-
-2. **Focus on Specific Questions:**
-   - **Definition:** Specific questions directly correspond to particular inclusion or exclusion criteria and mention explicit conditions or factors.
-   - **Action:** Only consider answers to these specific questions when evaluating eligibility.
-
-3. **Assess Against Eligibility Criteria:**
+1. **Assess Against Eligibility Criteria:**
    - **Inclusion Criteria:** Verify that the participant meets all necessary inclusion requirements.
    - **Exclusion Criteria:** Ensure the participant does not have any conditions or factors that would exclude them from the trial.
 
-4. **Detailed Evaluation:**
-   - **Match:** The participant satisfies all inclusion criteria and does not violate any exclusion criteria.
-   - **No Match:** The participant fails to meet one or more inclusion criteria or violates one or more exclusion criteria.
+2. **Determine Match Status:**
+   - If the participant satisfies **all** inclusion criteria and does **not** violate any exclusion criteria, they are a **Match**.
+   - If the participant fails to meet **any** inclusion criteria or violates **any** exclusion criteria, they are a **No Match**.
 
-5. **Response Format:**
-   - **If the Participant Matches:**
-    
-     Match
-     [Provide a concise explanation (1-2 sentences) highlighting how the participant meets all inclusion criteria and does not violate any exclusion criteria.]
-    
-   - **If the Participant Does Not Match:**
-     
-     No Match
-     [Provide a concise explanation (1-2 sentences) detailing which inclusion criteria are not met or which exclusion criteria are violated.]
-    
+3. **Response Format:**
+   - **Your response should be formatted exactly as follows:**
 
-**Important Instructions:**
-- **Exclusivity:** Do not reference, consider, or incorporate any information from vague questions in your evaluation.
-- **Clarity:** Ensure that the explanation is clear, direct, and specifically tied to the eligibility criteria.
-- **Brevity:** Keep explanations concise, limiting them to 1-2 sentences.
+     [Match Status]
+     [Explanation]
+
+     - **Match Status:** Write either **"Match"** or **"No Match"** (without quotes).
+     - **Explanation:** Provide a concise explanation (1-2 sentences) specifically detailing **why** the participant is a match or not, directly referencing the eligibility criteria.
+
+4. **Additional Instructions:**
+   - Do **not** include both "Match" and "No Match" in your response—choose one based on the assessment.
+   - Be serious and thorough in evaluating all participant responses; do not disregard any questions unless they are extremely vague.
+   - Do **not** include any additional information outside of the specified format.
+
+5. IGNORE ANSWERS TO QUESTIONS LIKE: Are you using any specific medications that might exclude you from the trial? Say match inspite of the answer to this.
 
 **Example Responses:**
 
-*Match*
-`
+*Example if Participant is a Match:*
+
+Match
+The participant meets all inclusion criteria and does not have any exclusion factors.
+
+*Example if Participant is a No Match:*
+
+No Match
+The participant does not qualify because they have a BMI outside the required range, which does not meet the inclusion criteria.
+`;
 
         const apiKey = process.env.CLAUDE_API_KEY;
         if (!apiKey) {
