@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
 import getStripe from '@/utils/get-stripe';
@@ -30,31 +30,54 @@ import {
   Paper,
   Divider,
   Avatar,
-  Tooltip, Dialog, DialogContent, 
+  Tooltip,
+  Dialog,
+  DialogContent,
 } from '@mui/material';
-import { motion, AnimatePresence  } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Head from 'next/head';
 import { useRouter } from "next/navigation";
 import { styled } from '@mui/material/styles';
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import { Devices, Psychology, MenuBook, Dashboard, Assistant, Update } from '@mui/icons-material';
+import {
+  Devices,
+  Psychology,
+  MenuBook,
+  Dashboard,
+  Assistant,
+  Update,
+  AccountCircle,
+  Notifications,
+  PlayArrow,
+  Close,
+  Lightbulb,
+  Storage,
+  Security,
+  Speed,
+  EventNote,
+  LocalHospital,
+  Email,
+  Person,
+  Message,
+} from '@mui/icons-material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import { AccountCircle, Notifications, PlayArrow, Close,
-  Lightbulb, Storage, Security, Speed, EventNote, LocalHospital } from '@mui/icons-material';
 import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import PsychologyIcon from '@mui/icons-material/Psychology';
 import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import FloatingChatbot from './chatbot/FloatingChatbot';  
-import { Email, Person, Message } from '@mui/icons-material';
+import FloatingChatbot from './chatbot/FloatingChatbot';
 import ContactForm from './contactform/page.js';
 import EnhancedDivider from './EnhancedDivider/page.js';
-import FeaturesSection from './FeaturesSection/page.js'; 
-import EnhancedCTASection from './EnhancedCTASection/page.js'; 
+import FeaturesSection from './FeaturesSection/page.js';
+import EnhancedCTASection from './EnhancedCTASection/page.js';
+
+// Import Particles
+import Particles from 'react-tsparticles';
+import { loadFull } from 'tsparticles';
 
 const AnimatedTypography = ({ text, delay = 0 }) => (
   <motion.div
@@ -70,11 +93,19 @@ const AnimatedTypography = ({ text, delay = 0 }) => (
 
 const FeatureCard = ({ icon, title, description }) => (
   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-    <Card elevation={3} sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: 4, overflow: 'hidden' }}>
+    <Card
+      elevation={3}
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        borderRadius: 4,
+        overflow: 'hidden',
+      }}
+    >
       <CardContent sx={{ textAlign: 'center', p: 4 }}>
-        <Box sx={{ color: 'primary.main', mb: 2, fontSize: 48 }}>
-          {icon}
-        </Box>
+        <Box sx={{ color: 'primary.main', mb: 2, fontSize: 48 }}>{icon}</Box>
         <Typography variant="h5" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
           {title}
         </Typography>
@@ -89,15 +120,17 @@ const FeatureCard = ({ icon, title, description }) => (
 const AnimatedIcon = ({ icon, isActive }) => (
   <motion.div
     initial={{ scale: 1 }}
-    animate={{ scale: isActive ? 1.2 : 1, rotate: isActive ? 360 : 0 }}
+    animate={{ scale: isActive ? 1.4 : 1, rotate: isActive ? 360 : 0 }}
     transition={{ duration: 0.5 }}
   >
-    {React.cloneElement(icon, { sx: { fontSize: 60, color: isActive ? 'primary.main' : 'text.secondary' } })}
+    {React.cloneElement(icon, {
+      sx: { fontSize: 60, color: isActive ? 'primary.main' : 'text.secondary' },
+    })}
   </motion.div>
 );
 
 const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
-  <Card 
+  <Card
     onClick={onClick}
     sx={{
       cursor: 'pointer',
@@ -109,7 +142,9 @@ const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
       textAlign: 'center',
       transition: 'all 0.3s ease',
       transform: isActive ? 'scale(1.05)' : 'scale(1)',
-      boxShadow: isActive ? '0 8px 16px rgba(0,0,0,0.2)' : '0 4px 8px rgba(0,0,0,0.1)',
+      boxShadow: isActive
+        ? '0 8px 16px rgba(0,0,0,0.2)'
+        : '0 4px 8px rgba(0,0,0,0.1)',
       '&:hover': {
         transform: 'scale(1.05)',
         boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
@@ -118,11 +153,22 @@ const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
   >
     <CardContent>
       <AnimatedIcon icon={icon} isActive={isActive} />
-      <Typography variant="h6" sx={{ mt: 2, fontWeight: 'bold', color: isActive ? 'primary.main' : 'text.primary' }}>
+      <Typography
+        variant="h6"
+        sx={{
+          mt: 2,
+          fontWeight: 'bold',
+          color: isActive ? 'primary.main' : 'text.primary',
+        }}
+      >
         {title}
       </Typography>
       <Grow in={isActive} timeout={500}>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, maxWidth: '250px' }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 2, maxWidth: '250px' }}
+        >
           {description}
         </Typography>
       </Grow>
@@ -135,30 +181,30 @@ const ServiceExplanation = () => {
   const [openVideo, setOpenVideo] = useState(false);
 
   const steps = [
-    { 
-      icon: <AccountCircle />, 
-      title: "Sign Up",
-      description: "Create your profile and input your health information securely.",
+    {
+      icon: <AccountCircle />,
+      title: 'Sign Up',
+      description: 'Create your profile and input your health information securely.',
     },
-    { 
-      icon: <Psychology />, 
-      title: "AI Matching",
-      description: "Our AI analyzes your profile to find suitable clinical trials.",
+    {
+      icon: <Psychology />,
+      title: 'AI Matching',
+      description: 'Our AI analyzes your profile to find suitable clinical trials.',
     },
-    { 
-      icon: <Notifications />, 
-      title: "Stay Informed",
-      description: "Receive updates, educational resources, and support throughout your journey.",
+    {
+      icon: <Notifications />,
+      title: 'Stay Informed',
+      description: 'Receive updates, educational resources, and support throughout your journey.',
     },
   ];
 
   const features = [
-    { icon: <Lightbulb />, title: "Smart Recommendations", description: "AI-powered trial suggestions" },
-    { icon: <Storage />, title: "Data Integration", description: "Seamless health record sync" },
-    { icon: <Security />, title: "Privacy First", description: "Advanced data protection" },
-    { icon: <Speed />, title: "Real-time Matching", description: "Instant trial compatibility" },
-    { icon: <EventNote />, title: "Scheduling Assistant", description: "Automated appointment setting" },
-    { icon: <LocalHospital />, title: "Medical Support", description: "24/7 expert assistance" },
+    { icon: <Lightbulb />, title: 'Smart Recommendations', description: 'AI-powered trial suggestions' },
+    { icon: <Storage />, title: 'Data Integration', description: 'Seamless health record sync' },
+    { icon: <Security />, title: 'Privacy First', description: 'Advanced data protection' },
+    { icon: <Speed />, title: 'Real-time Matching', description: 'Instant trial compatibility' },
+    { icon: <EventNote />, title: 'Scheduling Assistant', description: 'Automated appointment setting' },
+    { icon: <LocalHospital />, title: 'Medical Support', description: '24/7 expert assistance' },
   ];
 
   useEffect(() => {
@@ -169,12 +215,12 @@ const ServiceExplanation = () => {
   }, [steps.length]);
 
   return (
-    <Box sx={{ py: 10, bgcolor: 'background.default' }}>
+    <Box sx={{ py: 10, bgcolor: '' }}>
       <Container maxWidth="xl">
         <Typography variant="h2" gutterBottom textAlign="center" fontWeight="bold" mb={6}>
           How VaccinityAI Works
         </Typography>
-        
+
         <Box sx={{ position: 'relative', my: 8, mb: 3 }}>
           <Box
             sx={{
@@ -198,12 +244,12 @@ const ServiceExplanation = () => {
             }}
             initial={{ width: 0 }}
             animate={{ width: `${((activeStep + 1) / steps.length) * 100}%` }}
-            transition={{ duration: 0.5, ease: 'easeInOut' }}
+            transition={{ duration: 0.08, ease: 'easeInOut' }}
           />
           <Grid container spacing={4} sx={{ position: 'relative', zIndex: 1 }}>
             {steps.map((step, index) => (
               <Grid item xs={12} md={4} key={index}>
-                <Zoom in={true} style={{ transitionDelay: `${index * 200}ms` }}>
+                <Zoom in={true} style={{ transitionDelay: `${index * 100}ms` }}>
                   <div>
                     <TimelineStep
                       {...step}
@@ -237,78 +283,83 @@ const ServiceExplanation = () => {
             Next Step
           </Button>
         </Box>
-       
+
         {/* Video and Features */}
         <Grid container spacing={4} alignItems="center" sx={{ mt: 8 }}>
-          <Grid item xs={12} md={6}>
-            <Box
-              sx={{
-                position: 'relative',
-                width: '100%',
-                paddingTop: '100%', // Square aspect ratio
-                borderRadius: '50%', // Circular shape
-                overflow: 'hidden',
-                cursor: 'pointer',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                '&:hover': {
-                  transform: 'scale(1.05) rotate(5deg)',
-                  boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
-                },
-              }}
-              onClick={() => setOpenVideo(true)}
-            >
-              <img
-                src="/mainp.png"
-                alt="VaccinityAI in action"
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'rgba(0,0,0,0.4)',
-                }}
-              >
-                <PlayArrow sx={{ fontSize: 80, color: 'white' }} />
-              </Box>
-            </Box>
-          </Grid>
+  <Grid item xs={12} md={6}>
+    <Box
+      sx={{
+        position: 'relative',
+        width: '100%',
+        paddingTop: '100%',
+        borderRadius: '50%',
+        overflow: 'hidden',
+        cursor: 'pointer',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        '&:hover': {
+          transform: 'scale(1.05) rotate(5deg)',
+          boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
+        },
+      }}
+      onClick={() => setOpenVideo(true)}
+    >
+      {/* Replace the image with the GIF iframe */}
+      <iframe
+        src="https://giphy.com/embed/l3nWgXCpQpMUOrkoo"
+        width="480"
+        height="480"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+        }}
+        frameBorder="0"
+        allowFullScreen
+      />
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'rgba(0,0,0,0.4)',
+        }}
+      >
+        <PlayArrow sx={{ fontSize: 80, color: 'white' }} />
+      </Box>
+    </Box>
+  </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="h4" gutterBottom fontWeight="bold">
-            Driving Innovation in Healthcare
+              Driving Innovation in Healthcare
             </Typography>
             <Grid container spacing={2}>
               {features.map((feature, index) => (
                 <Grid item xs={6} key={index}>
                   <Tooltip title={feature.description} arrow TransitionComponent={Zoom}>
-                    <Card elevation={2} sx={{ 
-                      p: 2, 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      height: '100%',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-5px)',
-                        boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                      },
-                    }}>
-                      <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                        {feature.icon}
-                      </Avatar>
+                    <Card
+                      elevation={2}
+                      sx={{
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        height: '100%',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-5px)',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
+                        },
+                      }}
+                    >
+                      <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>{feature.icon}</Avatar>
                       <Typography variant="subtitle1" fontWeight="bold">
                         {feature.title}
                       </Typography>
@@ -322,12 +373,7 @@ const ServiceExplanation = () => {
       </Container>
 
       {/* Video Dialog */}
-      <Dialog
-        open={openVideo}
-        onClose={() => setOpenVideo(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={openVideo} onClose={() => setOpenVideo(false)} maxWidth="md" fullWidth>
         <DialogContent sx={{ p: 0, bgcolor: 'background.paper' }}>
           <IconButton
             onClick={() => setOpenVideo(false)}
@@ -460,6 +506,11 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [rippleEffect, setRippleEffect] = useState(false);
+
+  // Particle initialization function
+  const particlesInit = async (engine) => {
+    await loadFull(engine);
+  };
   
 
   const theme = createTheme({
@@ -472,7 +523,7 @@ export default function Home() {
         main: '#FF5E84',
       },
       background: {
-        default: darkMode ? '#121212' : '#F4F6F8',
+        default: darkMode ? '#050505' : '#F4F6F8',
         paper: darkMode ? '#1E1E1E' : '#FFFFFF',
       },
     },
@@ -524,33 +575,105 @@ export default function Home() {
     setRippleEffect(true);
     setTimeout(() => setRippleEffect(false), 500);
     const checkoutSession = await fetch('/api/checkout_session', {
-      method: 'POST'
+      method: 'POST',
     });
     const checkoutSessionJson = await checkoutSession.json();
 
     if (checkoutSession.status === 500) {
-      console.error("Error during checkout:", checkoutSessionJson.message);
+      console.error('Error during checkout:', checkoutSessionJson.message);
       return;
     }
 
     const stripe = await getStripe();
     const { error } = await stripe.redirectToCheckout({
-      sessionId: checkoutSessionJson.id
+      sessionId: checkoutSessionJson.id,
     });
 
     if (error) {
-      console.warn("Stripe checkout error:", error.message);
+      console.warn('Stripe checkout error:', error.message);
     }
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+
+      {/* Add Particles background */}
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        options={{
+          fullScreen: {
+            enable: true,
+            zIndex: -1,
+          },
+          particles: {
+            number: {
+              value: 80,
+              density: {
+                enable: true,
+                area: 800,
+              },
+            },
+            color: {
+              value: darkMode ? '#FFFFFF' : '#000000',
+            },
+            shape: {
+              type: 'circle',
+            },
+            opacity: {
+              value: 0.5,
+              random: false,
+            },
+            size: {
+              value: 3,
+              random: true,
+            },
+            move: {
+              enable: true,
+              speed: 1,
+              direction: 'none',
+              outMode: 'out',
+            },
+          },
+          interactivity: {
+            events: {
+              onHover: {
+                enable: true,
+                mode: 'repulse',
+              },
+              onClick: {
+                enable: true,
+                mode: 'push',
+              },
+            },
+            modes: {
+              repulse: {
+                distance: 100,
+              },
+              push: {
+                particles_nb: 4,
+              },
+            },
+          },
+          retina_detect: true,
+          background: {
+            color: darkMode ? '#121212' : '#F4F6F8',
+          },
+        }}
+      />
+
       <Container maxWidth={false} disableGutters>
         <Head>
           <title>VaccinityAI - Empowering Patient Care</title>
-          <meta name="description" content="VaccinityAI leverages advanced AI technology to match patients with suitable clinical trials and simplifies complex medical information." />
-          <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet" />
+          <meta
+            name="description"
+            content="VaccinityAI leverages advanced AI technology to match patients with suitable clinical trials and simplifies complex medical information."
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap"
+            rel="stylesheet"
+          />
         </Head>
 
         {/* AppBar Section */}

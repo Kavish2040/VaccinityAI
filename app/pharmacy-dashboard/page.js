@@ -31,11 +31,15 @@ import {
   AccordionDetails,
   Paper,
   CircularProgress,
+  Snackbar,
+  Alert,
+  Fab,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import MenuIcon from '@mui/icons-material/Menu';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SendIcon from '@mui/icons-material/Send';
 import {
   initializeApp
 } from 'firebase/app';
@@ -49,9 +53,10 @@ import {
   where,
   getDocs,
   serverTimestamp,
+  addDoc,
 } from 'firebase/firestore';
 
-// Firebase configuration using environment variables (recommended)
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
   authDomain: "vaccinityai-7941b.firebaseapp.com",
@@ -134,8 +139,19 @@ export default function PharmacyDashboard() {
   const [checkingUserType, setCheckingUserType] = useState(true);
   const [loading, setLoading] = useState(true);
   const [matchingStudies, setMatchingStudies] = useState([]);
+  
+  const [pharmacyNameError, setPharmacyNameError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'error',
+  });
 
-  // Check if the user is a pharmacy; redirect if not
+  // New state for message sending
+  const [messageText, setMessageText] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+
   useEffect(() => {
     if (isLoaded) {
       if (user) {
@@ -148,25 +164,24 @@ export default function PharmacyDashboard() {
         } else if (userType === 'patient') {
           console.log('Redirecting to /dashboard');
           router.push('/dashboard');
-          setLoading(false); // Ensure loading is set to false
+          setLoading(false);
         } else if (userType === undefined) {
           console.log('Redirecting to /complete-signup');
           router.push('/complete-signup');
-          setLoading(false); // Ensure loading is set to false
+          setLoading(false);
         } else {
           console.log('Redirecting to /');
           router.push('/');
-          setLoading(false); // Ensure loading is set to false
+          setLoading(false);
         }
       } else {
         console.log('Redirecting to /sign-in');
         router.push('/sign-in');
-        setLoading(false); // Ensure loading is set to false
+        setLoading(false);
       }
     }
   }, [isLoaded, user, router]);
 
-  // Check if pharmacy name exists in Firebase
   useEffect(() => {
     const checkPharmacyName = async () => {
       if (user) {
@@ -205,7 +220,6 @@ export default function PharmacyDashboard() {
     }
   }, [user, checkingUserType]);
 
-  // Fetch matching studies from 'savedStudies' collection
   useEffect(() => {
     const fetchMatchingStudies = async () => {
       if (pharmacyName) {
@@ -215,7 +229,7 @@ export default function PharmacyDashboard() {
           const studiesRef = collection(db, 'savedStudies');
           const standardizedPharmacyName = pharmacyName.trim().toLowerCase();
           console.log('Querying for leadSponsor:', standardizedPharmacyName);
-          const q = query(studiesRef, where('leadSponsor', '==', standardizedPharmacyName));
+          const q = query(studiesRef, where('leadSponsor'.trim(), '==', standardizedPharmacyName));
           const querySnapshot = await getDocs(q);
           const studies = [];
           querySnapshot.forEach((doc) => {
@@ -231,7 +245,7 @@ export default function PharmacyDashboard() {
         }
       } else {
         console.log('Pharmacy name is undefined in fetchMatchingStudies');
-        setLoading(false); // Ensure loading is set to false
+        setLoading(false);
       }
     };
 
@@ -263,31 +277,103 @@ export default function PharmacyDashboard() {
     </Box>
   );
 
-  // Handle submitting the pharmacy name
   const handlePharmacyNameSubmit = async () => {
-    const standardizedPharmacyName = pharmacyName.trim().toLowerCase(); // Standardize
+    const standardizedPharmacyName = pharmacyName.trim().toLowerCase();
+
     if (standardizedPharmacyName === '') {
-      alert('Please enter the name of the pharmacy.');
+      setPharmacyNameError('Please enter the name of the pharmacy.');
       return;
     }
 
+    setPharmacyNameError('');
+    setIsSubmitting(true);
+
     try {
+      const pharmaciesRef = collection(db, 'Pharmacy');
+      const q = query(pharmaciesRef, where('pharmacyName', '==', standardizedPharmacyName));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        setSnackbar({
+          open: true,
+          message: 'Pharmacy name already taken. Please choose another name.',
+          severity: 'error',
+        });
+        return;
+      }
+
       const userDocRef = doc(db, 'Pharmacy', user.id);
       await setDoc(userDocRef, { pharmacyName: standardizedPharmacyName }, { merge: true });
       console.log('Saved Pharmacy Name:', standardizedPharmacyName);
       setPharmacyName(standardizedPharmacyName);
       setIsModalOpen(false);
-      // Fetch matching studies after updating pharmacy name
-      // No need to call fetchMatchingStudies() here; it will run automatically due to useEffect dependency on pharmacyName
+      setSnackbar({
+        open: true,
+        message: 'Pharmacy name successfully saved!',
+        severity: 'success',
+      });
     } catch (error) {
       console.error('Error saving pharmacy name:', error);
+      setSnackbar({
+        open: true,
+        message: 'An error occurred while saving the pharmacy name. Please try again.',
+        severity: 'error',
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Log rendering state
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // New function to handle sending a message
+  const handleSendMessage = async (userId) => {
+    if (!messageText.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Please enter a message.',
+        severity: 'error',
+      });
+      return;
+    }
+
+    setSendingMessage(true);
+    try {
+      const messageData = {
+        senderId: user.id,
+        receiverId: userId,
+        message: messageText.trim(),
+        timestamp: serverTimestamp(),
+        read: false,
+      };
+
+      await addDoc(collection(db, 'messages'), messageData);
+
+      setSnackbar({
+        open: true,
+        message: 'Message sent successfully!',
+        severity: 'success',
+      });
+      setMessageText('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setSnackbar({
+        open: true,
+        message: 'Failed to send message. Please try again.',
+        severity: 'error',
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   console.log('Rendering component, checkingUserType:', checkingUserType, 'loading:', loading);
 
-  // If still loading, display a loading spinner
   if (checkingUserType || loading) {
     return (
       <ThemeProvider theme={theme}>
@@ -311,7 +397,6 @@ export default function PharmacyDashboard() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: 'flex' }}>
-        {/* App Bar */}
         <AppBar
           position="fixed"
           sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
@@ -337,7 +422,6 @@ export default function PharmacyDashboard() {
           </Toolbar>
         </AppBar>
 
-        {/* Drawer */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -370,7 +454,6 @@ export default function PharmacyDashboard() {
           {drawer}
         </Drawer>
 
-        {/* Main Content */}
         <Box
           component="main"
           sx={{
@@ -391,7 +474,6 @@ export default function PharmacyDashboard() {
             {pharmacyName}
           </Typography>
 
-          {/* Matching Studies */}
           <Typography variant="h5" sx={{ mb: 3 }}>
             Users Matching Your Studies
           </Typography>
@@ -419,14 +501,15 @@ export default function PharmacyDashboard() {
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
+                  <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                      Study Title: {study.simplifiedTitle.toUpperCase()}
+                    </Typography>
+
                     <Typography variant="subtitle1" sx={{ mb: 1 }}>
                       Match Result: {study.matchResult?.match ? 'Matched' : 'Not Matched'}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       Explanation: {study.matchResult?.explanation || 'N/A'}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      Eligibility Criteria: {study.eligibilityCriteria || 'N/A'}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       Questions and Answers:
@@ -447,6 +530,47 @@ export default function PharmacyDashboard() {
                         No questions and answers available.
                       </Typography>
                     )}
+                    {/* New Message Sending UI */}
+                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'flex-end' }}>
+                      <TextField
+                        fullWidth
+                        label="Send a message"
+                        variant="outlined"
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        sx={{
+                          mr: 1,
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: 'rgba(255, 255, 255, 0.23)',
+                            },
+                            '&:hover fieldset': {
+                              borderColor: 'rgba(255, 255, 255, 0.5)',
+                            },
+                            '&.Mui-focused fieldset': {
+                              borderColor: theme.palette.primary.main,
+                            },
+                          },
+                        }}
+                      />
+                      <Fab
+                        color="primary"
+                        aria-label="send"
+                        onClick={() => handleSendMessage(study.userId)}
+                        disabled={sendingMessage}
+                        sx={{
+                          width: 56,
+                          height: 56,
+                          minHeight: 56,
+                        }}
+                      >
+                        {sendingMessage ? (
+                          <CircularProgress size={24} color="inherit" />
+                        ) : (
+                          <SendIcon />
+                        )}
+                      </Fab>
+                    </Box>
                   </AccordionDetails>
                 </Accordion>
               ))}
@@ -471,14 +595,28 @@ export default function PharmacyDashboard() {
             variant="outlined"
             value={pharmacyName}
             onChange={(e) => setPharmacyName(e.target.value)}
+            error={Boolean(pharmacyNameError)}
+            helperText={pharmacyNameError}
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handlePharmacyNameSubmit} color="primary" variant="contained">
-            Submit
+          <Button onClick={handlePharmacyNameSubmit} color="primary" variant="contained" disabled={isSubmitting}>
+            {isSubmitting ? <CircularProgress size={24} color="inherit" /> : 'Submit'}
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </ThemeProvider>
   );
 }

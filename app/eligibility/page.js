@@ -1,5 +1,3 @@
-// app/eligibility/page.js
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -15,7 +13,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 import { useUser } from "@clerk/nextjs"; // Import Clerk's useUser for user details
 import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
@@ -74,10 +72,11 @@ const theme = createTheme({
 export default function Eligibility() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { user } = useUser(); // Clerk user data
+  const { user } = useUser(); 
 
   const [eligibilityCriteria, setEligibilityCriteria] = useState('');
-  const [leadSponsor, setLeadSponsor] = useState(''); // New state variable for leadSponsor
+  const [leadSponsor, setLeadSponsor] = useState('');
+  const [simplifiedTitle, setSimplifiedTitle] = useState(''); 
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +92,7 @@ export default function Eligibility() {
   useEffect(() => {
     const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
     const leadSponsorParam = searchParams.get('leadSponsor');
+    const simplifiedTitleParam = searchParams.get('simplifiedTitle');
 
     // Decode and set leadSponsor
     if (leadSponsorParam) {
@@ -102,6 +102,16 @@ export default function Eligibility() {
       } catch (error) {
         console.error('Error decoding lead sponsor:', error);
         setLeadSponsor(leadSponsorParam);
+      }
+    }
+
+    if (simplifiedTitleParam) {
+      try {
+        const decodedTitle = decodeURIComponent(simplifiedTitleParam);
+        setSimplifiedTitle(decodedTitle.toLowerCase()); // Corrected line
+      } catch (error) {
+        console.error('Error decoding simplified title:', error);
+        setSimplifiedTitle(simplifiedTitleParam);
       }
     }
 
@@ -199,15 +209,36 @@ export default function Eligibility() {
     try {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
 
-      const docRef = await addDoc(collection(db, "savedStudies"), {
+      // Define the query to check for duplicates
+      const studiesRef = collection(db, "savedStudies");
+      const q = query(
+        studiesRef,
+        where("userId", "==", user.id),
+        where("simplifiedTitle", "==", simplifiedTitle)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // Duplicate found
+        setSnackbarMessage("This study has already been saved.");
+        setSnackbarSeverity("warning");
+        setSnackbarOpen(true);
+        setIsSaving(false);
+        return;
+      }
+
+      // No duplicate found, proceed to add the document
+      const docRef = await addDoc(studiesRef, {
         eligibilityCriteria,
-        questions, // You might want to save only the texts here as well
+        questions: questions.map(q => q.text), // Save only question texts
         answers,
         matchResult,
         timestamp: new Date(),
         userId: user.id,
         userName: userName, // Include user's name
-        leadSponsor: leadSponsor, // Include lead sponsor
+        leadSponsor: leadSponsor.trim(), // Include lead sponsor
+        simplifiedTitle: simplifiedTitle,
       });
       console.log("Document written with ID: ", docRef.id);
       setSnackbarMessage("Study saved successfully!");
