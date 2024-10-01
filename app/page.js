@@ -1,8 +1,11 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
+import Head from 'next/head';
+import { useRouter } from "next/navigation";
+import { useUser, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import getStripe from '@/utils/get-stripe';
-import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/nextjs';
 import {
   Container,
   Typography,
@@ -26,59 +29,44 @@ import {
   IconButton,
   Grow,
   Zoom,
-  CardMedia,
-  Paper,
-  Divider,
   Avatar,
   Tooltip,
   Dialog,
   DialogContent,
+  Divider,
 } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
-import Head from 'next/head';
-import { useRouter } from "next/navigation";
 import { styled } from '@mui/material/styles';
+import { motion } from 'framer-motion';
+import Particles from 'react-tsparticles';
+import { loadFull } from 'tsparticles';
+
+// Corrected Import Statements for MUI Icons
 import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import {
-  Devices,
-  Psychology,
-  MenuBook,
-  Dashboard,
-  Assistant,
-  Update,
-  AccountCircle,
-  Notifications,
-  PlayArrow,
-  Close,
-  Lightbulb,
-  Storage,
-  Security,
-  Speed,
-  EventNote,
-  LocalHospital,
-  Email,
-  Person,
-  Message,
-} from '@mui/icons-material';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import CloseIcon from '@mui/icons-material/Close';
+import LightbulbIcon from '@mui/icons-material/Lightbulb';
+import StorageIcon from '@mui/icons-material/Storage';
+import SecurityIcon from '@mui/icons-material/Security';
+import SpeedIcon from '@mui/icons-material/Speed';
+import EventNoteIcon from '@mui/icons-material/EventNote';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import TwitterIcon from '@mui/icons-material/Twitter';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import InstagramIcon from '@mui/icons-material/Instagram';
-import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
-import PsychologyIcon from '@mui/icons-material/Psychology';
-import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+
+// Import Custom Components
 import FloatingChatbot from './chatbot/FloatingChatbot';
 import ContactForm from './contactform/page.js';
 import EnhancedDivider from './EnhancedDivider/page.js';
 import FeaturesSection from './FeaturesSection/page.js';
 import EnhancedCTASection from './EnhancedCTASection/page.js';
 
-// Import Particles
-import Particles from 'react-tsparticles';
-import { loadFull } from 'tsparticles';
-
+/**
+ * AnimatedTypography Component
+ * Animates the appearance of Typography elements.
+ */
 const AnimatedTypography = ({ text, delay = 0 }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
@@ -91,6 +79,10 @@ const AnimatedTypography = ({ text, delay = 0 }) => (
   </motion.div>
 );
 
+/**
+ * FeatureCard Component
+ * Displays individual feature cards.
+ */
 const FeatureCard = ({ icon, title, description }) => (
   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
     <Card
@@ -117,18 +109,34 @@ const FeatureCard = ({ icon, title, description }) => (
   </motion.div>
 );
 
-const AnimatedIcon = ({ icon, isActive }) => (
-  <motion.div
-    initial={{ scale: 1 }}
-    animate={{ scale: isActive ? 1.4 : 1, rotate: isActive ? 360 : 0 }}
-    transition={{ duration: 0.5 }}
-  >
-    {React.cloneElement(icon, {
-      sx: { fontSize: 60, color: isActive ? 'primary.main' : 'text.secondary' },
-    })}
-  </motion.div>
-);
+/**
+ * AnimatedIcon Component
+ * Animates icons or images based on their type.
+ */
+const AnimatedIcon = ({ icon, isActive }) => {
+  const isImage = icon.type === Image;
 
+  return (
+    <motion.div
+      initial={{ scale: 1 }}
+      animate={{ scale: isActive ? 1.4 : 1, rotate: isActive ? 360 : 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      {isImage ? (
+        icon
+      ) : (
+        React.cloneElement(icon, {
+          sx: { fontSize: 60, color: isActive ? 'primary.main' : 'text.secondary' },
+        })
+      )}
+    </motion.div>
+  );
+};
+
+/**
+ * TimelineStep Component
+ * Represents each step in the service explanation timeline.
+ */
 const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
   <Card
     onClick={onClick}
@@ -140,8 +148,8 @@ const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
       alignItems: 'center',
       justifyContent: 'center',
       textAlign: 'center',
-      transition: 'all 0.3s ease',
-      transform: isActive ? 'scale(1.05)' : 'scale(1)',
+      transition: 'all 0.2s ease',
+      transform: isActive ? 'scale(1.05)' : 'scale(1.00)',
       boxShadow: isActive
         ? '0 8px 16px rgba(0,0,0,0.2)'
         : '0 4px 8px rgba(0,0,0,0.1)',
@@ -176,35 +184,63 @@ const TimelineStep = ({ icon, title, description, isActive, onClick }) => (
   </Card>
 );
 
+/**
+ * ServiceExplanation Component
+ * Explains how the service works using a timeline of steps.
+ */
 const ServiceExplanation = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [openVideo, setOpenVideo] = useState(false);
 
   const steps = [
     {
-      icon: <AccountCircle />,
+      // Replaced AccountCircle with the sign-up GIF
+      icon: (
+        <Image
+          src="/register.gif" // Ensure this path is correct
+          alt="Sign Up"
+          width={60}
+          height={60}
+        />
+      ),
       title: 'Sign Up',
       description: 'Create your profile and input your health information securely.',
     },
     {
-      icon: <Psychology />,
+      // Replaced PsychologyIcon with Artificial Intelligence GIF
+      icon: (
+        <Image
+          src="/chatbot.gif" // Ensure this path is correct
+          alt="Artificial Intelligence"
+          width={60}
+          height={60}
+        />
+      ),
       title: 'AI Matching',
       description: 'Our AI analyzes your profile to find suitable clinical trials.',
     },
     {
-      icon: <Notifications />,
+      // Replaced NotificationsIcon with Notification GIF
+      icon: (
+        <Image
+          src="/notification3.gif" // Ensure this path is correct
+          alt="Notifications"
+          width={60}
+          height={60}
+        />
+      ),
       title: 'Stay Informed',
       description: 'Receive updates, educational resources, and support throughout your journey.',
     },
   ];
 
   const features = [
-    { icon: <Lightbulb />, title: 'Smart Recommendations', description: 'AI-powered trial suggestions' },
-    { icon: <Storage />, title: 'Data Integration', description: 'Seamless health record sync' },
-    { icon: <Security />, title: 'Privacy First', description: 'Advanced data protection' },
-    { icon: <Speed />, title: 'Real-time Matching', description: 'Instant trial compatibility' },
-    { icon: <EventNote />, title: 'Scheduling Assistant', description: 'Automated appointment setting' },
-    { icon: <LocalHospital />, title: 'Medical Support', description: '24/7 expert assistance' },
+    { icon: <LightbulbIcon />, title: 'Smart Recommendations', description: 'AI-powered trial suggestions' },
+    { icon: <StorageIcon />, title: 'Data Integration', description: 'Seamless health record sync' },
+    { icon: <SecurityIcon />, title: 'Privacy First', description: 'Advanced data protection' },
+    { icon: <SpeedIcon />, title: 'Real-time Matching', description: 'Instant trial compatibility' },
+    { icon: <EventNoteIcon />, title: 'Scheduling Assistant', description: 'Automated appointment setting' },
+    { icon: <LocalHospitalIcon />, title: 'Medical Support', description: '24/7 expert assistance' },
   ];
 
   useEffect(() => {
@@ -215,7 +251,7 @@ const ServiceExplanation = () => {
   }, [steps.length]);
 
   return (
-    <Box sx={{ py: 10, bgcolor: '' }}>
+    <Box sx={{ py: 10 }}>
       <Container maxWidth="xl">
         <Typography variant="h2" gutterBottom textAlign="center" fontWeight="bold" mb={6}>
           How VaccinityAI Works
@@ -262,7 +298,7 @@ const ServiceExplanation = () => {
             ))}
           </Grid>
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 6 }}>
           <Button
             variant="contained"
             color="primary"
@@ -270,10 +306,10 @@ const ServiceExplanation = () => {
             sx={{
               px: 4,
               py: 1.5,
-              borderRadius: '30px',
+              borderRadius: 30,
               fontWeight: 'bold',
               textTransform: 'none',
-              fontSize: '1.1rem',
+              fontSize: '1rem',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: '0 6px 12px rgba(140, 82, 255, 0.3)',
@@ -286,57 +322,57 @@ const ServiceExplanation = () => {
 
         {/* Video and Features */}
         <Grid container spacing={4} alignItems="center" sx={{ mt: 8 }}>
-  <Grid item xs={12} md={6}>
-    <Box
-      sx={{
-        position: 'relative',
-        width: '100%',
-        paddingTop: '100%',
-        borderRadius: '50%',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-        '&:hover': {
-          transform: 'scale(1.05) rotate(5deg)',
-          boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
-        },
-      }}
-      onClick={() => setOpenVideo(true)}
-    >
-      {/* Replace the image with the GIF iframe */}
-      <iframe
-        src="https://giphy.com/embed/l3nWgXCpQpMUOrkoo"
-        width="480"
-        height="480"
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-        frameBorder="0"
-        allowFullScreen
-      />
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(0,0,0,0.4)',
-        }}
-      >
-        <PlayArrow sx={{ fontSize: 80, color: 'white' }} />
-      </Box>
-    </Box>
-  </Grid>
+          <Grid item xs={12} md={6}>
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                paddingTop: '100%',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.05) rotate(5deg)',
+                  boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
+                },
+              }}
+              onClick={() => setOpenVideo(true)}
+            >
+              {/* Replace the image with the GIF iframe */}
+              <iframe
+                src="https://giphy.com/embed/l3nWgXCpQpMUOrkoo"
+                width="480"
+                height="480"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                }}
+                frameBorder="0"
+                allowFullScreen
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: 'rgba(0,0,0,0.4)',
+                }}
+              >
+                <PlayArrowIcon sx={{ fontSize: 80, color: 'white' }} />
+              </Box>
+            </Box>
+          </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="h4" gutterBottom fontWeight="bold">
               Driving Innovation in Healthcare
@@ -386,7 +422,7 @@ const ServiceExplanation = () => {
               '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
             }}
           >
-            <Close />
+            <CloseIcon />
           </IconButton>
           <Box sx={{ position: 'relative', pb: '56.25%', height: 0 }}>
             <iframe
@@ -409,6 +445,10 @@ const ServiceExplanation = () => {
   );
 };
 
+/**
+ * Footer Component
+ * Renders the footer section of the page.
+ */
 const Footer = ({ darkMode }) => {
   const handleSubscribe = (e) => {
     e.preventDefault();
@@ -500,6 +540,10 @@ const Footer = ({ darkMode }) => {
   );
 };
 
+/**
+ * Home Component
+ * Main component rendering the entire page.
+ */
 export default function Home() {
   const router = useRouter();
   const { user } = useUser();
@@ -511,7 +555,6 @@ export default function Home() {
   const particlesInit = async (engine) => {
     await loadFull(engine);
   };
-  
 
   const theme = createTheme({
     palette: {
@@ -571,6 +614,10 @@ export default function Home() {
     color: 'white',
   }));
 
+  /**
+   * handleCheckout Function
+   * Initiates the Stripe checkout process.
+   */
   const handleCheckout = async () => {
     setRippleEffect(true);
     setTimeout(() => setRippleEffect(false), 500);
@@ -677,7 +724,12 @@ export default function Home() {
         </Head>
 
         {/* AppBar Section */}
-        <AppBar position="fixed" color="transparent" elevation={0} sx={{ backdropFilter: 'blur(10px)', width: '100%' }}>
+        <AppBar
+          position="fixed"
+          color="transparent"
+          elevation={0}
+          sx={{ backdropFilter: 'blur(10px)', width: '100%' }}
+        >
           <Toolbar sx={{ mb: -2 }}>
             <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
               <Image src="/logo1.png" alt="VaccinityAI Logo" width={205} height={110} />
@@ -720,7 +772,12 @@ export default function Home() {
                 Dashboard
               </Button>
               <SignedOut>
-                <Button color="primary" onClick={() => router.push('/sign-up')} variant="contained" sx={{ borderRadius: 30 }}>
+                <Button
+                  color="primary"
+                  onClick={() => router.push('/sign-up')}
+                  variant="contained"
+                  sx={{ borderRadius: 30 }}
+                >
                   Sign Up
                 </Button>
               </SignedOut>
@@ -730,8 +787,8 @@ export default function Home() {
               <Switch
                 checked={darkMode}
                 onChange={() => setDarkMode(!darkMode)}
-                icon={<LightModeOutlinedIcon sx={{ color: darkMode ? '#000000' : '#000000' }} />}
-                checkedIcon={<DarkModeOutlinedIcon sx={{ color: darkMode ? '#fff' : '#fff' }} />}
+                icon={<LightModeOutlinedIcon sx={{ color: '#000000' }} />}
+                checkedIcon={<DarkModeOutlinedIcon sx={{ color: '#fff' }} />}
                 sx={{
                   '& .MuiSwitch-switchBase': {
                     '&.Mui-checked': {
@@ -789,7 +846,7 @@ export default function Home() {
                   color: 'primary.main',
                   '&:hover': {
                     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                  }
+                  },
                 }}
                 onClick={() => {
                   if (user) {
@@ -809,7 +866,7 @@ export default function Home() {
         <Container maxWidth="xl" sx={{ px: { xs: 2, sm: 4, md: 6, lg: 8 } }}>
           {/* Features Section */}
           <FeaturesSection />
-      
+
           {/* Divider */}
           <EnhancedDivider />
 
@@ -818,16 +875,15 @@ export default function Home() {
 
           {/* Divider */}
           <EnhancedDivider />
-           
+
+          {/* Call To Action Section */}
           <EnhancedCTASection />
 
+          {/* Divider */}
           <EnhancedDivider />
 
           {/* Contact Form Section */}
           <ContactForm />
-
-          {/* Call to Action Section with Parallax Effect */}
-          
         </Container>
 
         {/* Modal for Sign-In Prompt */}
@@ -841,17 +897,19 @@ export default function Home() {
           }}
         >
           <Fade in={openModal}>
-            <Box sx={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: { xs: 300, sm: 400 },
-              bgcolor: 'background.paper',
-              borderRadius: 4,
-              boxShadow: 24,
-              p: 4,
-            }}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: { xs: 300, sm: 400 },
+                bgcolor: 'background.paper',
+                borderRadius: 4,
+                boxShadow: 24,
+                p: 4,
+              }}
+            >
               <Typography variant="h5" component="h2" gutterBottom>
                 Welcome to VaccinityAI!
               </Typography>
@@ -875,6 +933,8 @@ export default function Home() {
 
         {/* Footer Section */}
         <Footer darkMode={darkMode} />
+
+        {/* Floating Chatbot */}
         <FloatingChatbot />
       </Container>
     </ThemeProvider>

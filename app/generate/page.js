@@ -1,4 +1,7 @@
+// app/generate/page.js
+
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import {
     Container, Typography, Paper, Dialog, DialogTitle, DialogContent, DialogContentText,
@@ -16,6 +19,7 @@ import { useUser, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
 import MenuIcon from '@mui/icons-material/Menu';
 import ImprovedAppBar from '@/app/ImprovedAppBar/page.js';
+import { List, ListItem, ListItemText } from '@mui/material';
 
 // Define a modern and clean theme
 const theme = createTheme({
@@ -164,14 +168,14 @@ const LoadingWithFacts = () => {
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <Card 
-                            sx={{ 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                p: 2, 
-                                bgcolor: alpha('#6C63FF', 0.1), 
-                                borderRadius: 2 
+                        <Card
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                p: 2,
+                                bgcolor: alpha('#6C63FF', 0.1),
+                                borderRadius: 2
                             }}
                         >
                             <Box sx={{ mr: 2 }}>
@@ -202,14 +206,14 @@ export default function Generate() {
     const [selectedStudy, setSelectedStudy] = useState(null);
     const [showSimplified, setShowSimplified] = useState(true);
     const [openModal, setOpenModal] = useState(true);
-    const [nextPageToken, setNextPageToken] = useState('1'); // Initialize to '1'
+    const [nextPageToken, setNextPageToken] = useState(null); // Initialize to null
     const [hasMore, setHasMore] = useState(true);
     const [activeStep, setActiveStep] = useState(0);
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
         status: 'all',
         phase: [],
-        gender: 'all', // Changed from 'sex' to 'gender'
+        gender: 'all',
         ageRange: [0, 100],
         healthyVolunteers: false,
     });
@@ -224,7 +228,7 @@ export default function Generate() {
             setAge(age || '');
             setLocation(location || '');
             setIntervention(intervention || '');
-            setNextPageToken(nextPageToken || '1'); // Initialize to '1'
+            setNextPageToken(nextPageToken || null); // Initialize to null
 
             if (studies && studies.length > 0) {
                 setSelectedStudy(studies[0]);
@@ -262,19 +266,20 @@ export default function Generate() {
 
     const handleSubmit = async () => {
         setLoading(true);
-        setNextPageToken('1'); // Reset to first page on new search
+        setNextPageToken(null); // Reset to null on new search
         setHasMore(true);
         setStudies([]);  // Clear old studies
         setSelectedStudy(null);  // Clear selected study
 
-        const bodyContent = { 
-            text, 
-            age, 
-            location, 
-            intervention, 
-            pageToken: '1', // Start from first page
+        const bodyContent = {
+            text,
+            age,
+            location,
+            intervention,
+            pageToken: null, // Start from first page
+            pageSize: 25,
             seenIds: [],  // Reset seen IDs for a new search
-            filters, // Include filters in the request
+            filters, // Include filters in the request if needed
         };
 
         try {
@@ -306,18 +311,18 @@ export default function Generate() {
             setNextPageToken(data.nextPageToken);
             setHasMore(data.hasMore);
 
-            sessionStorage.setItem('searchData', JSON.stringify({ 
-                studies: structuredData, 
-                text, 
-                age, 
-                location, 
+            sessionStorage.setItem('searchData', JSON.stringify({
+                studies: structuredData,
+                text,
+                age,
+                location,
                 intervention,
                 nextPageToken: data.nextPageToken
             }));
         } catch (error) {
             console.error('Error fetching studies:', error);
             setStudies([]);
-            setNextPageToken('1');
+            setNextPageToken(null);
             setHasMore(false);
         } finally {
             setLoading(false);
@@ -339,8 +344,9 @@ export default function Generate() {
                     location,
                     intervention,
                     pageToken: nextPageToken, // Use nextPageToken
+                    pageSize: 25,
                     seenIds: studies.map(study => study.ID),
-                    filters, // Include filters in the request
+                    filters, // Include filters in the request if needed
                 }),
             });
 
@@ -361,11 +367,11 @@ export default function Generate() {
             setNextPageToken(data.nextPageToken);
             setHasMore(data.hasMore);
 
-            sessionStorage.setItem('searchData', JSON.stringify({ 
-                studies: [...studies, ...structuredData], 
-                text, 
-                age, 
-                location, 
+            sessionStorage.setItem('searchData', JSON.stringify({
+                studies: [...studies, ...structuredData],
+                text,
+                age,
+                location,
                 intervention,
                 nextPageToken: data.nextPageToken
             }));
@@ -378,7 +384,28 @@ export default function Generate() {
 
     const handleCloseModal = () => setOpenModal(false);
 
-    const handleStudyClick = (study) => setSelectedStudy(study);
+    const handleStudyClick = async (study) => {
+        setSelectedStudy(study);
+
+        if (!study.detailedData) {
+            try {
+                setLoading(true); // Show loading indicator
+                const response = await fetch(`/api/study/${study.ID}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const detailedData = await response.json();
+
+                setStudies(prevStudies => prevStudies.map(s => s.ID === study.ID ? { ...s, ...detailedData, detailedData: true } : s));
+                setSelectedStudy({ ...study, ...detailedData, detailedData: true });
+            } catch (error) {
+                console.error('Error fetching study details:', error);
+            } finally {
+                setLoading(false); // Hide loading indicator
+            }
+        }
+    };
 
     const handleCheckEligibility = () => {
         if (selectedStudy && selectedStudy.eligibilityCriteria) {
@@ -399,26 +426,13 @@ export default function Generate() {
     };
 
     const extractAndStructureData = (data) => {
-        return data.map(study => {
-            const lines = study.split('\n');
-            const getField = (keyword) => {
-                const line = lines.find(line => line.includes(keyword));
-                return line ? line.split('-> ')[1] : 'Not available';
-            };
-
-            return {
-                ID: (getField('ID')).trim(),
-                originalTitle: getField('Original Title'),
-                simplifiedTitle: getField('Simplified Title'),
-                originalDescription: getField('Original Description'),
-                simplifiedDescription: getField('Simplified Description'),
-                participants: getField('Number of Participants'),
-                minimumAge: getField('Minimum Age'),
-                leadSponsor: getField('Lead Sponsor'),
-                eligibilityCriteria: getField('Eligibility Criteria'),
-                locations: getField('Location'),
-            };
-        });
+        return data.map(study => ({
+            ID: study.ID,
+            originalTitle: study.originalTitle,
+            simplifiedTitle: study.simplifiedTitle,
+            minimumAge: study.minimumAge,
+            participants: study.participants,
+        }));
     };
 
     const getStepContent = (step) => {
@@ -500,7 +514,7 @@ export default function Generate() {
             }}
         >
             <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Refine Your Search</Typography>
-            
+
             <FormControl component="fieldset" sx={{ mb: 3 }}>
                 <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Study Status</FormLabel>
                 <RadioGroup
@@ -537,7 +551,7 @@ export default function Generate() {
             </Box>
 
             <FormControl fullWidth sx={{ mb: 3 }}>
-                <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Gender</FormLabel> {/* Changed from 'Sex' to 'Gender' */}
+                <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Gender</FormLabel>
                 <Select
                     value={filters.gender}
                     onChange={(e) => handleFilterChange('gender', e.target.value)}
@@ -590,7 +604,6 @@ export default function Generate() {
         <ThemeProvider theme={theme}>
             <CssBaseline />
             {/* Redesigned AppBar */}
-            
             <ImprovedAppBar />
             <Container maxWidth="xl" sx={{ py: 4 }}>
                 {/* Main Content */}
@@ -606,7 +619,7 @@ export default function Generate() {
                         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
                             {steps.map((label, index) => (
                                 <Step key={label}>
-                                    <StepLabel StepIconComponent={({active, completed}) => (
+                                    <StepLabel StepIconComponent={({ active, completed }) => (
                                         <motion.div
                                             initial={false}
                                             animate={{ scale: active || completed ? 1.2 : 1 }}
@@ -644,7 +657,7 @@ export default function Generate() {
                         </Box>
                     </Paper>
                 </motion.div>
-
+    
                 <Grid container spacing={3}>
                     {/* Filters Section */}
                     <Grid item xs={12} md={3}>
@@ -667,7 +680,7 @@ export default function Generate() {
                             </Button>
                         </Paper>
                     </Grid>
-                    
+    
                     {/* Clinical Trials List */}
                     <Grid item xs={12} md={4}>
                         <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.background.paper, 0.95), mb: 3, maxHeight: '600px', overflowY: 'auto' }} id="study-list">
@@ -684,9 +697,9 @@ export default function Generate() {
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.2, delay: index * 0.05 }}
                                         >
-                                            <Card 
-                                                sx={{ 
-                                                    mb: 2, 
+                                            <Card
+                                                sx={{
+                                                    mb: 2,
                                                     bgcolor: selectedStudy?.ID === study.ID ? alpha(theme.palette.primary.main, 0.05) : 'background.paper',
                                                     cursor: 'pointer',
                                                 }}
@@ -696,19 +709,10 @@ export default function Generate() {
                                                     <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, fontSize: '0.95rem' }}>
                                                         {study.simplifiedTitle}
                                                     </Typography>
-                                                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                                        <Chip 
-                                                            icon={<Group />} 
-                                                            label={`Participants: ${study.participants}`}
-                                                            size="small"
-                                                            sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), fontSize: '0.75rem' }}
-                                                        />
-                                                        <Chip 
-                                                            icon={<Person />} 
-                                                            label={`Min Age: ${study.minimumAge}`}
-                                                            size="small"
-                                                            sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1), fontSize: '0.75rem' }}
-                                                        />
+                                                    {/* Display min age and number of participants */}
+                                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                                        <Chip icon={<Person />} label={`Min Age: ${study.minimumAge}`} size="small" />
+                                                        <Chip icon={<Group />} label={`Participants: ${study.participants}`} size="small" />
                                                     </Box>
                                                 </CardContent>
                                             </Card>
@@ -723,9 +727,9 @@ export default function Generate() {
                             )}
                             {hasMore && (
                                 <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                                    <Button 
-                                        onClick={loadMoreStudies} 
-                                        variant="outlined" 
+                                    <Button
+                                        onClick={loadMoreStudies}
+                                        variant="outlined"
                                         size="small"
                                         disabled={loading}
                                     >
@@ -735,7 +739,7 @@ export default function Generate() {
                             )}
                         </Paper>
                     </Grid>
-                    
+    
                     {/* Study Details */}
                     <Grid item xs={12} md={5}>
                         <Paper elevation={0} sx={{ p: 2, borderRadius: 2, bgcolor: alpha(theme.palette.background.paper, 0.95), height: { md: '600px' }, overflowY: 'auto' }}>
@@ -751,36 +755,58 @@ export default function Generate() {
                                     label={showSimplified ? "Simplified View" : "Original View"}
                                     sx={{ fontSize: '0.8rem' }}
                                 />
-                                <Button
-                                    variant="contained"
-                                    onClick={handleCheckEligibility}
-                                    size="small"
-                                >
-                                    Check Eligibility
-                                </Button>
+                                {selectedStudy && selectedStudy.detailedData && (
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleCheckEligibility}
+                                        size="small"
+                                    >
+                                        Check Eligibility
+                                    </Button>
+                                )}
                             </Box>
-
+    
                             {selectedStudy ? (
-                                <Fade in={true}>
-                                    <Box>
-                                        <Typography variant="h5" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1rem' }}>
-                                            {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
-                                        </Typography>
-                                        <Typography variant="body1" sx={{ mb: 2, fontSize: '0.85rem' }}>
-                                            {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
-                                        </Typography>
-                                    
-                                        <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontSize: '0.8rem' }}>
-                                            <strong>Location:</strong> {selectedStudy.locations}
-                                        </Typography>
-
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-                                            <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} size="small" />
-                                            <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} size="small" />
-                                            <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} size="small" />
+                                selectedStudy.detailedData ? (
+                                    <Fade in={true}>
+                                        <Box>
+                                            <Typography variant="h5" sx={{ mb: 1, fontWeight: 'bold', fontSize: '1rem' }}>
+                                                {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
+                                            </Typography>
+                                            <Typography variant="body1" sx={{ mb: 2, fontSize: '0.85rem' }}>
+                                                {showSimplified ? selectedStudy.simplifiedDescription : selectedStudy.originalDescription}
+                                            </Typography>
+    
+                                            <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary', fontSize: '0.8rem' }}>
+                                                <strong>Locations:</strong>
+                                                {Array.isArray(selectedStudy.locations) && selectedStudy.locations.length > 0 ? (
+                                                    <List dense>
+                                                    {selectedStudy.locations.map((location, index) => (
+                                                        <ListItem key={index} disableGutters>
+                                                        <ListItemText
+                                                            primary={`${location.facility}, ${location.city}, ${location.state}, ${location.country}`}
+                                                            primaryTypographyProps={{ variant: 'body2', fontSize: '0.8rem' }}
+                                                        />
+                                                        </ListItem>
+                                                    ))}
+                                                    </List>
+                                                ) : (
+                                                    "Locations not specified"
+                                                )}
+                                                </Typography>
+                                                    
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                                                <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} size="small" />
+                                                <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} size="small" />
+                                                <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} size="small" />
+                                            </Box>
                                         </Box>
+                                    </Fade>
+                                ) : (
+                                    <Box sx={{ textAlign: 'center', p: 2 }}>
+                                        <CircularProgress color="primary" />
                                     </Box>
-                                </Fade>
+                                )
                             ) : (
                                 <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary', fontSize: '0.85rem' }}>
                                     Select a study to see more details.
@@ -789,12 +815,12 @@ export default function Generate() {
                         </Paper>
                     </Grid>
                 </Grid>
-
+    
                 <FilterSection />
-
+    
                 {/* Instruction Modal */}
-                <Dialog 
-                    open={openModal} 
+                <Dialog
+                    open={openModal}
                     onClose={handleCloseModal}
                     PaperProps={{
                         sx: {
@@ -822,4 +848,5 @@ export default function Generate() {
             <FloatingChatbot />
         </ThemeProvider>
     );
-}
+    
+}    

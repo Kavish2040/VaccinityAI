@@ -1,39 +1,73 @@
+// app/api/generate/route.js
+
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import fetch from 'node-fetch';
 
-const systemPrompt = `For each medical study, present the information in a simplified and non-repetitive format. Detail the study name and description initially in their original form followed by a simplified version. Only include those study that match the user condition, min age, and location preference. Format as follows:
-1. ID -> Mention the unique Protocol Identification Number. Trim any extra spaces before and after the words
-2. Original Title -> [Insert original title] 
-3. Simplified Title -> [Insert simplified title explaining all medical terms, chemical formulas, devices, or hormones present. Don't change any meanings, just provide simplified explanation for each term]
-4. Original Description -> [Insert original description]
-5. Simplified Description -> [Insert simplified description, clarifying all medical terms, chemical formulas, devices, or hormones. Give a very in-depth explanation]
-6. Number of Participants -> [Insert number]
-7. Minimum Age -> [Insert age]
-8. Lead Sponsor -> [Insert sponsor] 
-9. Eligibility Criteria -> Give both eligibility and ineligibility requirements. Dont seperate them by a newline. Just write Inclusion: whatever whatever the text is to start with 
-10. Location -> Mention location of sponsore, facility, including coountry, zip code, city, and geopoint. if recieving multiple locations in text group all of them together without new line and return
-Ensure that there is a line space between each subtitle even after the last 9. line and maintain a consistent output format for each study without using separators like '---' between sections. Place the title information before the description for both original and simplified versions, and ensure space between the original and simplified titles and descriptions.
-
-`;
-
+// Initialize OpenAI with your API key
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-async function fetchClinicalTrials(disease, location, intr, pageNumber = 1) {
-    const disease2 = disease
+// Function to simplify the disease input
+async function simplifyDisease(text) {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                {
+                    role: "system",
+                    content: `Simplify the following patient diagnosis, condition, or disease into 2-4 words to use as a search query in the ClinicalTrials.gov API. Use medical terms without adjectives. For example, "I have really bad stomach pain" becomes "stomach pain".`
+                },
+                { role: "user", content: text }
+            ]
+        });
+
+        const simplifiedDisease = completion.choices[0].message.content.trim();
+        console.log("Simplified Disease:", simplifiedDisease);
+        return simplifiedDisease;
+    } catch (error) {
+        console.error('Error simplifying disease:', error);
+        return text; // Return original text if simplification fails
+    }
+}
+
+// Function to simplify the study title
+async function simplifyTitle(title) {
+    try {
+        const completion = await openai.chat.completions.create({
+            model: "gpt-3.5-turbo",
+            messages: [
+                {
+                    role: "system",
+                    content: "Simplify the following study title, explaining medical terms, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title. Give a super detailed and VERY SIMPLE title that a PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE CAN UNDERSTAND. GIVE A GOOD LENGTH TITLE SIMPLYFYING EVERY ACRONYM OR MEDICAL WORD IF PRESENT"
+                },
+                { role: "user", content: title }
+            ]
+        });
+
+        return completion.choices[0].message.content.trim();
+    } catch (error) {
+        console.error('Error simplifying title:', error);
+        return title; // Return original title if simplification fails
+    }
+}
+
+// Function to fetch clinical trials from ClinicalTrials.gov API
+async function fetchClinicalTrials(disease, location, intervention, pageSize = 25, pageToken = null) {
     const baseURL = 'https://clinicaltrials.gov/api/v2/studies';
     const params = new URLSearchParams({
-        'query.cond': disease2,
-        pageSize: '25',  
+        'query.cond': disease,
+        'pageSize': pageSize.toString(),
     });
 
     if (location) {
         params.append('query.locn', location);
     }
-    if (intr) {
-        params.append('query.intr', intr);
+    if (intervention) {
+        params.append('query.intr', intervention);
+    }
+    if (pageToken) {
+        params.append('pageToken', pageToken);
     }
 
     const url = `${baseURL}?${params.toString()}`;
@@ -53,103 +87,76 @@ async function fetchClinicalTrials(disease, location, intr, pageNumber = 1) {
     }
 }
 
-async function simplifyText(text) {
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "system", content: systemPrompt }, { role: "user", content: text }]
-        });
-
-        return completion.choices[0].message.content.trim();
-    } catch (error) {
-        console.error('Error simplifying text:', error);
-        return { error: "Simplification failed", details: text };
-    }
-}
-
-async function simplifyDisease(text) {
-    try {
-        const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "system", content: `You have been provided with a patient diagnosis, condition, or disease. Simplify this query into 2-4 words at max to be able to call a search query in the clinical trials gov API. Don't use adjectives, only medical terms. For example, if the query is "I have really bad stomach pain", return "stomach pain".` }, { role: "user", content: text }]
-        });
-
-        const simplifiedDisease = completion.choices[0].message.content.trim();
-        console.log("Simplified Disease:", simplifiedDisease);
-        return simplifiedDisease;
-    } catch (error) {
-        console.error('Error simplifying text:', error);
-        return { error: "Simplification failed", details: text };
-    }
-}
-
+// POST handler for the generate API
 export async function POST(req) {
     try {
-        const requestBody = await req.text();
-        const parsedBody = JSON.parse(requestBody);
-        const disease = parsedBody.text;
-        const age = parseInt(parsedBody.age) || 100;
-        const location = parsedBody.location;
-        const intr = parsedBody.intervention;
-        const page = parseInt(parsedBody.page) || 1;
-        console.log(page)
-        const seenIds = new Set(parsedBody.seenIds || []);
-        console.log(seenIds)
+        const requestBody = await req.json();
+        const diseaseInput = requestBody.text;
+        const disease = await simplifyDisease(diseaseInput);
+        const age = parseInt(requestBody.age) || 100;
+        const location = requestBody.location;
+        const intervention = requestBody.intervention;
+        const pageSize = parseInt(requestBody.pageSize) || 25;
+        const pageToken = requestBody.pageToken || null;
+        const seenIds = new Set(requestBody.seenIds || []);
 
-        const trialsData = await fetchClinicalTrials(disease, location, intr, page);
+        const trialsData = await fetchClinicalTrials(disease, location, intervention, pageSize, pageToken);
+
         if (!trialsData.studies || trialsData.studies.length === 0) {
             console.log('No studies found for the given disease:', disease);
-            throw new Error('No studies found for the given disease.');
+            return NextResponse.json({
+                studies: [],
+                nextPageToken: null,
+                hasMore: false
+            }, { status: 200 });
         }
 
-        let allSimplifiedTexts = [];
-        let count = 0;
+        let simplifiedStudies = [];
 
         for (const trial of trialsData.studies) {
-            if (count >= 5) break;
-
             const protocolSection = trial.protocolSection;
-            if (!protocolSection || !protocolSection.identificationModule || !protocolSection.descriptionModule) {
+            if (!protocolSection || !protocolSection.identificationModule) {
                 continue;
             }
 
-            const trialId = protocolSection.identificationModule.orgStudyIdInfo.id;
-            if (!seenIds.has(trialId)) 
-            {
+            const trialId = protocolSection.identificationModule.nctId;
+            if (!seenIds.has(trialId)) {
+                
 
-            const minimumAge = protocolSection.eligibilityModule?.minimumAge || "0 years";
-            const minimumAgeValue = parseInt(minimumAge.match(/(\d+)/));
+                const minimumAgeValue = protocolSection.eligibilityModule?.minimumAge || "0 years";
+                const minimumAge = parseInt(minimumAgeValue.match(/(\d+)/));
 
-            if (age >= minimumAgeValue) {
-                const studyDetails = JSON.stringify({
+                const participants = protocolSection.designModule?.enrollmentInfo?.count || "Not specified";
+
+                const studyDetails = {
                     ID: trialId,
                     studyName: protocolSection.identificationModule.officialTitle || protocolSection.identificationModule.briefTitle,
-                    studyDescription: protocolSection.descriptionModule.briefSummary,
-                    number: protocolSection.designModule?.enrollmentInfo?.count || "Not specified",
                     minimumAge: minimumAge,
-                    leadSponsor: protocolSection.sponsorCollaboratorsModule?.leadSponsor?.name || "Not specified",
-                    eligibilityCriteria: protocolSection.eligibilityModule?.eligibilityCriteria || "Not specified",
-                    locations: protocolSection.contactsLocationsModule?.locations || "Not specified"
+                    participants: participants,
+                };
+
+                const simplifiedTitle = await simplifyTitle(studyDetails.studyName);
+
+                simplifiedStudies.push({
+                    ID: studyDetails.ID,
+                    originalTitle: studyDetails.studyName,
+                    simplifiedTitle: simplifiedTitle,
+                    minimumAge: studyDetails.minimumAge,
+                    participants: studyDetails.participants,
                 });
 
-                const simplifiedText = await simplifyText(studyDetails);
-                console.log(simplifiedText)
-                allSimplifiedTexts.push(simplifiedText);
                 seenIds.add(trialId);
-                count++;
             }
         }
-    }
 
-        return new NextResponse(JSON.stringify({ studies: allSimplifiedTexts, hasMore: trialsData.studies.length > count }), {
-            headers: { 'Content-Type': 'application/json' },
-            status: 200
-        });
+        return NextResponse.json({
+            studies: simplifiedStudies,
+            nextPageToken: trialsData.nextPageToken || null,
+            hasMore: Boolean(trialsData.nextPageToken)
+        }, { status: 200 });
+
     } catch (error) {
         console.error('Error in POST:', error);
-        return new NextResponse(JSON.stringify({ error: 'Failed to process request', detail: error.message }), {
-            headers: { 'Content-Type': 'application/json' },
-            status: 500
-        });
+        return NextResponse.json({ error: 'Failed to process request', detail: error.message }, { status: 500 });
     }
 }
