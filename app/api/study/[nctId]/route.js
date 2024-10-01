@@ -57,7 +57,7 @@ async function simplifyDescription(description) {
             messages: [
                 {
                     role: "system",
-                    content: "Simplify the following study description, clarifying all medical terms, chemical formulas, devices, or hormones. Provide a clear and detailed explanation. Give a proper very simple to understadn FOR A PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE to understand description"
+                    content: "Simplify the following study description, clarifying all medical terms, chemical formulas, devices, or hormones. Provide a clear and detailed explanation. Give a proper very simple to understadn FOR A PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE to understand description. Give explanation keeping professional that even a 10th grade student cna understand"
                 },
                 { role: "user", content: description }
             ]
