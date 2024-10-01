@@ -1,3 +1,4 @@
+"use client"
 import React from 'react';
 import { AppBar, Toolbar, Button, Box, IconButton, useMediaQuery } from '@mui/material';
 import { styled, alpha } from '@mui/material/styles';
