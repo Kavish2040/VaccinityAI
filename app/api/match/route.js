@@ -1,7 +1,7 @@
 // File: /pages/api/match.js or /app/api/match/route.js
 
 import { NextResponse } from 'next/server';
-import axios from 'axios';
+import OpenAI from 'openai';
 
 export async function POST(req) {
     try {
@@ -43,6 +43,10 @@ ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i]}`).join('\n\n')}
 
 **Evaluation Guidelines:**
 
+AT THIS STAGE WE ARE ONLY MAKING A BASIC MATCH NOT A PERFECT MATCH, IF THE PATIENT ANSWERS MATCH WITH THE QUESTIONS JUST BASED ON THE ANSWERS TO THE QUESTIONS GIVE A MATCH OR NO MATHC DONT GO INTO SPECIFICS
+
+VERY IMPORTANT: ONLY MATCH OR NOT MATCH BASED ON THE QUESTIONS RECEIVED AND THE ANSWERS TO THEM. 
+
 1. **Assess Against Eligibility Criteria:**
    - **Inclusion Criteria:** Verify that the participant meets all necessary inclusion requirements.
    - **Exclusion Criteria:** Ensure the participant does not have any conditions or factors that would exclude them from the trial.
@@ -66,46 +70,26 @@ ${questions.map((q, i) => `Q: ${q}\nA: ${answers[i]}`).join('\n\n')}
    - Do **not** include any additional information outside of the specified format.
 
 5. IGNORE ANSWERS TO QUESTIONS LIKE: Are you using any specific medications that might exclude you from the trial? Say match inspite of the answer to this.
-
-**Example Responses:**
-
-*Example if Participant is a Match:*
-
-Match
-The participant meets all inclusion criteria and does not have any exclusion factors.
-
-*Example if Participant is a No Match:*
-
-No Match
-The participant does not qualify because they have a BMI outside the required range, which does not meet the inclusion criteria.
 `;
 
-        const apiKey = process.env.CLAUDE_API_KEY;
-        if (!apiKey) {
+        // Initialize OpenAI client
+        const openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+
+        if (!process.env.OPENAI_API_KEY) {
             console.error('API key is missing.');
             return NextResponse.json({ error: 'API key missing.' }, { status: 500 });
         }
 
-        // Call the Anthropics API
-        const response = await axios.post(
-            'https://api.anthropic.com/v1/messages',
-            {
-                model: 'claude-3-haiku-20240307',
-                max_tokens: 1024,
-                temperature: 0,
-                messages: [{ role: 'user', content: prompt }]
-            },
-            {
-                headers: {
-                    'x-api-key': apiKey,
-                    'anthropic-version': '2023-06-01',
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+        // Create a chat completion
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+        });
 
         // Extract the generated text
-        const generatedText = response.data.content[0].text;
+        const generatedText = response.choices[0].message.content;
         const lines = generatedText.trim().split('\n');
 
         let matchStatus = lines[0].trim();

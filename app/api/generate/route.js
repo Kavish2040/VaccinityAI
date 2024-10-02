@@ -35,11 +35,11 @@ async function simplifyDisease(text) {
 async function simplifyTitle(title) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini", // Corrected model name from "gpt-4o-mini" to "gpt-4"
             messages: [
                 {
                     role: "system",
-                    content: "Simplify the following study title, explaining medical terms, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title. Give a super detailed and VERY SIMPLE title that a PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE CAN UNDERSTAND. GIVE A GOOD LENGTH TITLE SIMPLYFYING EVERY ACRONYM OR MEDICAL WORD IF PRESENT"
+                    content: "Simplify the following study title, explaining medical terms in () next to the word itself not at the end, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title such that a 10th grader can read and fully comprehend it.  Don't write anything like 'Simplified Title:. Keep titles concise and easy to read. EXPLAIN ANY COMPLICATED WORDS NOT JUST MEDICAL WORDS IN () NEXT TO THE WORD ITSELF'"
                 },
                 { role: "user", content: title }
             ]
@@ -87,6 +87,9 @@ async function fetchClinicalTrials(disease, location, intervention, pageSize = 2
     }
 }
 
+// Define allowed overallStatus values
+const allowedStatuses = ["RECRUITING","ACTIVE"];
+
 // POST handler for the generate API
 export async function POST(req) {
     try {
@@ -121,10 +124,17 @@ export async function POST(req) {
 
             const trialId = protocolSection.identificationModule.nctId;
             if (!seenIds.has(trialId)) {
-                
+                const statusModule = protocolSection.statusModule;
+                const overallStatus = statusModule?.overallStatus || "Not specified";
+
+                // **Filter studies based on allowedStatuses**
+                if (!allowedStatuses.includes(overallStatus)) {
+                    continue; // Skip studies that do not have the desired status
+                }
 
                 const minimumAgeValue = protocolSection.eligibilityModule?.minimumAge || "0 years";
-                const minimumAge = parseInt(minimumAgeValue.match(/(\d+)/));
+                const ageMatch = minimumAgeValue.match(/(\d+)/);
+                const minimumAge = ageMatch ? parseInt(ageMatch[1]) : 0;
 
                 const participants = protocolSection.designModule?.enrollmentInfo?.count || "Not specified";
 
@@ -133,6 +143,7 @@ export async function POST(req) {
                     studyName: protocolSection.identificationModule.officialTitle || protocolSection.identificationModule.briefTitle,
                     minimumAge: minimumAge,
                     participants: participants,
+                    overallStatus: overallStatus,
                 };
 
                 const simplifiedTitle = await simplifyTitle(studyDetails.studyName);
@@ -143,6 +154,7 @@ export async function POST(req) {
                     simplifiedTitle: simplifiedTitle,
                     minimumAge: studyDetails.minimumAge,
                     participants: studyDetails.participants,
+                    overallStatus: studyDetails.overallStatus,
                 });
 
                 seenIds.add(trialId);

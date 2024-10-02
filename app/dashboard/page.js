@@ -1,7 +1,12 @@
+// app/components/Dashboard.js
+
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { SignOutButton } from '@clerk/nextjs';
+
 import {
   AppBar,
   Box,
@@ -19,21 +24,23 @@ import {
   Card,
   CardContent,
   IconButton,
-  Paper,
-  Badge,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  ListItemButton,
   Avatar,
   Divider,
   Tooltip,
   Menu,
   MenuItem,
+  TextField,
+  CircularProgress,
+  InputAdornment,
+  Badge,
+  Button,
+  ListItemButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
+
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
 import ScienceIcon from '@mui/icons-material/Science';
@@ -43,7 +50,9 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import MailIcon from '@mui/icons-material/Mail';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import CircularProgress from '@mui/material/CircularProgress';
+import SearchIcon from '@mui/icons-material/Search';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
+
 import {
   getFirestore,
   collection,
@@ -54,9 +63,11 @@ import {
   doc,
   updateDoc,
   onSnapshot,
+  documentId,
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip as ReTooltip, CartesianGrid } from 'recharts';
+
+import UserDetailsModal from '../components/UserDetailsModal'; // Corrected import path
 
 // Firebase configuration
 const firebaseConfig = {
@@ -80,18 +91,18 @@ const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1E88E5',
+      main: '#1976d2', // Primary color
     },
     secondary: {
-      main: '#FF7043',
+      main: '#ff4081', // Secondary color
     },
     background: {
       default: '#121212',
       paper: '#1E1E1E',
     },
     text: {
-      primary: '#FFFFFF',
-      secondary: '#B0B0B0',
+      primary: '#ffffff',
+      secondary: '#b0b0b0',
     },
   },
   typography: {
@@ -127,6 +138,11 @@ const theme = createTheme({
           backgroundColor: '#2A2A2A',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
           borderRadius: '12px',
+          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-5px)',
+            boxShadow: '0 12px 24px rgba(0, 0, 0, 0.3)',
+          },
         },
       },
     },
@@ -134,9 +150,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-selected': {
-            backgroundColor: 'rgba(30, 136, 229, 0.2)',
+            backgroundColor: 'rgba(25, 118, 210, 0.2)', // Primary color
             '&:hover': {
-              backgroundColor: 'rgba(30, 136, 229, 0.3)',
+              backgroundColor: 'rgba(25, 118, 210, 0.3)',
             },
           },
         },
@@ -148,6 +164,8 @@ const theme = createTheme({
 export default function Dashboard() {
   const router = useRouter();
   const { isLoaded, user } = useUser();
+  const { openUserProfile } = useClerk();
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [savedStudies, setSavedStudies] = useState([]);
   const [loadingStudies, setLoadingStudies] = useState(true);
@@ -159,45 +177,48 @@ export default function Dashboard() {
   const [openMessagesDialog, setOpenMessagesDialog] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  // State for Notifications
+  // State for notifications
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+
   const [anchorEl, setAnchorEl] = useState(null);
   const openProfileMenu = Boolean(anchorEl);
 
-  useEffect(() => {
-    console.log('Current user ID:', user?.id);
-  }, [user]);
+  const [senders, setSenders] = useState({});
 
-  // Check if the user is a patient; redirect if not
-  useEffect(() => {
-    if (isLoaded) {
-      console.log('Dashboard: User is loaded:', user);
-      if (user) {
-        const userType = user.unsafeMetadata?.userType;
-        console.log('Dashboard: User type:', userType);
+  const [searchTerm, setSearchTerm] = useState('');
 
-        if (userType === 'patient') {
-          setCheckingUserType(false);
-        } else if (userType === 'pharmacy') {
-          router.push('/pharmacy-dashboard');
-        } else if (userType === undefined) {
-          console.warn('User type is undefined. Redirecting to complete-signup.');
-          router.push('/complete-signup');
-        } else {
-          console.warn('User type is invalid. Redirecting to home.');
-          router.push('/');
-        }
-      } else {
-        router.push('/sign-in');
-      }
-    }
-  }, [isLoaded, user, router]);
+  // New State for User Entry Details
+  const [userDetails, setUserDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(true);
 
+  // State for Edit Details Modal
+  const [editOpen, setEditOpen] = useState(false);
+  // State for Initial Details Modal
+  const [initialDetailsModalOpen, setInitialDetailsModalOpen] = useState(false);
+
+  // Handle Drawer Toggle
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  // Handle Profile Menu
+  const handleProfileMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleProfileMenuClose = () => {
+    setAnchorEl(null);
+  };
+  const handleProfile = () => {
+    openUserProfile();
+    handleProfileMenuClose();
+  };
+  const handleSettings = () => {
+    router.push('/settings');
+    handleProfileMenuClose();
+  };
+
+  // Drawer Content
   const drawer = (
     <Box sx={{ color: 'white', height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Toolbar>
@@ -210,6 +231,7 @@ export default function Dashboard() {
         {[
           { text: 'Home', icon: <HomeIcon />, onClick: () => router.push('/') },
           { text: 'Clinical Trials', icon: <ScienceIcon />, onClick: () => router.push('/generate') },
+          { text: 'Get Genetic Testing Results', icon: <DocumentScannerIcon />, onClick: () => router.push('/genetic-testing') },
           // Add more navigation items here
         ].map((item) => (
           <ListItem key={item.text} disablePadding>
@@ -225,30 +247,22 @@ export default function Dashboard() {
       <Divider />
       <List>
         {[
-          { text: 'Logout', icon: <LogoutIcon />, onClick: () => router.push('/sign-out') },
+          { text: 'Logout', icon: <LogoutIcon /> },
         ].map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton onClick={item.onClick}>
-              <ListItemIcon sx={{ color: theme.palette.secondary.main }}>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItemButton>
+            <SignOutButton>
+              <ListItemButton>
+                <ListItemIcon sx={{ color: theme.palette.secondary.main }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
+            </SignOutButton>
           </ListItem>
         ))}
       </List>
     </Box>
   );
-
-  const dashboardItems = [
-    {
-      title: 'Clinical Trials',
-      description: 'Access and monitor ongoing clinical trials',
-      icon: <ScienceIcon fontSize="large" />,
-      link: '/generate',
-    },
-    // Add more dashboard items as needed
-  ];
 
   // Fetch saved studies from Firebase
   useEffect(() => {
@@ -298,37 +312,73 @@ export default function Dashboard() {
       console.log('Fetching messages for user ID:', user.id);
 
       try {
-        const q = query(
+        const messagesQuery = query(
           collection(db, 'messages'),
           where('receiverId', '==', user.id)
         );
-        const querySnapshot = await getDocs(q);
+        const messagesSnapshot = await getDocs(messagesQuery);
 
-        console.log('Query snapshot size:', querySnapshot.size);
+        console.log('Query snapshot size:', messagesSnapshot.size);
 
         const msgs = [];
         let unread = 0;
-        for (const doc of querySnapshot.docs) {
-          const data = doc.data();
-          console.log('Message data:', data);
+        const senderIdsToFetch = new Set();
 
+        messagesSnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
           msgs.push({
-            id: doc.id,
+            id: docSnap.id,
             ...data,
-            senderName: data.senderId, // Ideally, fetch sender's name
-            timestamp: data.timestamp && data.timestamp.toDate ?
-              data.timestamp.toDate().toLocaleString() :
-              (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
+            timestamp: data.timestamp && data.timestamp.toDate
+              ? data.timestamp.toDate().toLocaleString()
+              : (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
           });
 
           if (!data.read) unread += 1;
+
+          // Collect sender IDs to fetch their names
+          if (data.senderId) {
+            senderIdsToFetch.add(data.senderId);
+          }
+        });
+
+        // Fetch sender names using document IDs
+        if (senderIdsToFetch.size > 0) {
+          // Firestore allows a maximum of 10 items in an 'in' query
+          const senderIdsArray = Array.from(senderIdsToFetch);
+          const chunkSize = 10;
+          const senderChunks = [];
+
+          for (let i = 0; i < senderIdsArray.length; i += chunkSize) {
+            senderChunks.push(senderIdsArray.slice(i, i + chunkSize));
+          }
+
+          const sendersMap = {};
+
+          for (const chunk of senderChunks) {
+            const sendersQuery = query(
+              collection(db, 'Pharmacy'),
+              where(documentId(), 'in', chunk)
+            );
+            const sendersSnapshot = await getDocs(sendersQuery);
+
+            sendersSnapshot.forEach((doc) => {
+              sendersMap[doc.id] = doc.data().pharmacyName.toUpperCase() || 'UNKNOWN PHARMACY';
+            });
+          }
+
+          setSenders(sendersMap);
         }
 
-        // Sort messages by timestamp string (newest first)
-        msgs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Map sender names to messages
+        const mappedMessages = msgs.map((msg) => ({
+          ...msg,
+          senderName: senders[msg.senderId] || 'UNKNOWN PHARMACY',
+        }));
 
-        console.log('Processed messages:', msgs);
-        setMessages(msgs);
+        // Sort messages by timestamp descending
+        mappedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        setMessages(mappedMessages);
         setUnreadCount(unread);
       } catch (error) {
         console.error('Error fetching messages: ', error);
@@ -340,13 +390,9 @@ export default function Dashboard() {
     if (user) {
       fetchMessages();
     }
-  }, [user]);
+  }, [user, senders]);
 
-  useEffect(() => {
-    console.log('Messages updated:', messages);
-  }, [messages]);
-
-  // Fetch notifications (similar to messages)
+  // Fetch notifications
   useEffect(() => {
     const fetchNotifications = () => {
       if (!user?.id) return;
@@ -364,9 +410,9 @@ export default function Dashboard() {
           notifs.push({
             id: doc.id,
             ...data,
-            timestamp: data.timestamp && data.timestamp.toDate ?
-              data.timestamp.toDate().toLocaleString() :
-              (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
+            timestamp: data.timestamp && data.timestamp.toDate
+              ? data.timestamp.toDate().toLocaleString()
+              : (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
           });
           if (!data.read) unread += 1;
         });
@@ -383,6 +429,37 @@ export default function Dashboard() {
 
     if (user) {
       fetchNotifications();
+    }
+  }, [user]);
+
+  // Fetch User Entry Details
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!user?.id) return;
+
+      try {
+        const q = query(
+          collection(db, 'UserEntryDetails'),
+          where('userId', '==', user.id)
+        );
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const docSnap = querySnapshot.docs[0];
+          setUserDetails(docSnap.data());
+        } else {
+          // Open the initial modal if details are missing
+          setInitialDetailsModalOpen(true);
+        }
+      } catch (error) {
+        console.error('Error fetching user details:', error);
+      } finally {
+        setLoadingDetails(false);
+      }
+    };
+
+    if (user) {
+      fetchUserDetails();
     }
   }, [user]);
 
@@ -451,23 +528,47 @@ export default function Dashboard() {
     }
   };
 
-  // Handle profile menu
-  const handleProfileMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleProfileMenuClose = () => {
-    setAnchorEl(null);
-  };
-  const handleProfile = () => {
-    router.push('/profile');
-    handleProfileMenuClose();
-  };
-  const handleSettings = () => {
-    router.push('/settings');
-    handleProfileMenuClose();
+  // Filtered saved studies based on search term
+  const filteredStudies = savedStudies.filter((study) =>
+    study.simplifiedTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Check if the user is a patient; redirect if not
+  useEffect(() => {
+    if (isLoaded) {
+      console.log('Dashboard: User is loaded:', user);
+      if (user) {
+        const userType = user.unsafeMetadata?.userType;
+        console.log('Dashboard: User type:', userType);
+
+        if (userType === 'patient') {
+          setCheckingUserType(false);
+        } else if (userType === 'pharmacy') {
+          router.push('/pharmacy-dashboard');
+        } else if (userType === undefined) {
+          console.warn('User type is undefined. Redirecting to complete-signup.');
+          router.push('/complete-signup');
+        } else {
+          console.warn('User type is invalid. Redirecting to home.');
+          router.push('/');
+        }
+      } else {
+        router.push('/sign-in');
+      }
+    }
+  }, [isLoaded, user, router]);
+
+  // Handle saving user details from the modal
+  const handleSaveUserDetails = (newDetails) => {
+    setUserDetails(newDetails);
+    // Close the initial modal if it was open
+    if (initialDetailsModalOpen) {
+      setInitialDetailsModalOpen(false);
+    }
+    // You can also refresh other parts of the dashboard if necessary
   };
 
-  if (checkingUserType) {
+  if (checkingUserType || loadingStudies || loadingDetails) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -513,19 +614,44 @@ export default function Dashboard() {
             >
               Dashboard
             </Typography>
-            {/* Notifications Icon */}
-            <Tooltip title="Notifications">
-              <IconButton color="inherit">
-                <Badge badgeContent={unreadNotifications} color="secondary">
-                  <NotificationsIcon />
-                </Badge>
-              </IconButton>
-            </Tooltip>
+
+            {/* Search Bar */}
+            <Box sx={{ flexGrow: 1, maxWidth: 400, mx: 2 }}>
+              <TextField
+                variant="outlined"
+                size="small"
+                placeholder="Search studies..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                fullWidth
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon color="action" />
+                    </InputAdornment>
+                  ),
+                  sx: {
+                    backgroundColor: '#2A2A2A',
+                    borderRadius: 1,
+                    color: 'white',
+                  },
+                }}
+              />
+            </Box>
+
             {/* Messages Icon with Badge */}
             <Tooltip title="Messages">
               <IconButton color="inherit" onClick={handleOpenMessagesDialog}>
                 <Badge badgeContent={unreadCount} color="error">
                   <MailIcon />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            {/* Notifications Icon with Badge */}
+            <Tooltip title="Notifications">
+              <IconButton color="inherit">
+                <Badge badgeContent={unreadNotifications} color="error">
+                  <NotificationsIcon />
                 </Badge>
               </IconButton>
             </Tooltip>
@@ -536,7 +662,11 @@ export default function Dashboard() {
                 onClick={handleProfileMenuOpen}
                 sx={{ ml: 2 }}
               >
-                <AccountCircle />
+                {user?.imageUrl ? (
+                  <Avatar src={user.imageUrl} alt={user.fullName || 'User'} />
+                ) : (
+                  <AccountCircle />
+                )}
               </IconButton>
             </Tooltip>
             <Menu
@@ -554,7 +684,11 @@ export default function Dashboard() {
             >
               <MenuItem onClick={handleProfile}>Profile</MenuItem>
               <MenuItem onClick={handleSettings}>Settings</MenuItem>
-              <MenuItem onClick={() => router.push('/sign-out')}>Logout</MenuItem>
+              <MenuItem>
+                <SignOutButton>
+                  <Typography>Logout</Typography>
+                </SignOutButton>
+              </MenuItem>
             </Menu>
           </Toolbar>
         </AppBar>
@@ -607,192 +741,327 @@ export default function Dashboard() {
           <Grid container spacing={4}>
             {/* Welcome Message */}
             <Grid item xs={12}>
-              <Typography
-                variant="h4"
-                sx={{
-                  mb: 2,
-                  color: theme.palette.primary.main,
-                  fontWeight: 'bold',
-                }}
-              >
-                Welcome back, {user?.firstName || 'User'}!
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column', mb: 4 }}>
+                <Avatar
+                  src={user?.imageUrl}
+                  alt={user?.fullName || 'User'}
+                  sx={{ width: 64, height: 64, mb: 2 }}
+                />
+                <Typography
+                  variant="h4"
+                  sx={{
+                    color: theme.palette.primary.main,
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Welcome back, {user?.fullName || 'User'}!
+                </Typography>
+                <Typography variant="subtitle1" color="text.secondary">
+                  {user?.primaryEmailAddress?.emailAddress || 'No Email Provided'}
+                </Typography>
+                {user?.primaryPhoneNumber && (
+                  <Typography variant="subtitle1" color="text.secondary">
+                    {user.primaryPhoneNumber.phoneNumber}
+                  </Typography>
+                )}
+
+                {/* Display User Entry Details */}
+                {!loadingDetails && userDetails && (
+                  <Box sx={{ mt: 3, width: '100%', maxWidth: 600 }}>
+                    <Card sx={{ backgroundColor: '#2A2A2A', padding: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ color: theme.palette.primary.main }}>
+                          Your Details
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => setEditOpen(true)}
+                        >
+                          Edit Details
+                        </Button>
+                      </Box>
+                      <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Type of Cancer:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.typeOfCancer}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Stage:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.stage}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Chemotherapy:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.chemotherapy}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Radiation Therapy:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.radiation}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Other Treatment:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.otherTreatment}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Gender:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.gender}</Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Ethnicity:
+                          </Typography>
+                          <Typography variant="body1">{userDetails.ethnicity}</Typography>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                  </Box>
+                )}
+              </Box>
             </Grid>
 
-            {/* Analytics Cards */}
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Total Studies
-                  </Typography>
-                  <Typography variant="h4">
-                    {savedStudies.length}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Active Trials
-                  </Typography>
-                  <Typography variant="h4">
-                    {/* Placeholder number */}
-                    0
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    New Messages
-                  </Typography>
-                  <Typography variant="h4">
-                    {unreadCount}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    Notifications
-                  </Typography>
-                  <Typography variant="h4">
-                    {unreadNotifications}
-                  </Typography>
-                </CardContent>
-              </Card>
+            {/* Summary Cards */}
+            <Grid item xs={12}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Total Studies
+                      </Typography>
+                      <Typography variant="h4">
+                        {savedStudies.length}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Active Trials
+                      </Typography>
+                      <Typography variant="h4">
+                        {savedStudies.filter(study => study.matchResult?.match).length}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        New Messages
+                      </Typography>
+                      <Typography variant="h4">
+                        {unreadCount}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Notifications
+                      </Typography>
+                      <Typography variant="h4">
+                        {unreadNotifications}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
             </Grid>
 
             {/* Recent Activities */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
                   <Typography variant="h6" gutterBottom>
                     Recent Activities
                   </Typography>
                   <List>
-                    {/* Placeholder activities */}
-                    <ListItem>
-                      <ListItemText primary="Joined a new study: COVID-19 Vaccine Trial" secondary="2 hours ago" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemText primary="Received a message from Pharmacy" secondary="1 day ago" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemText primary="Updated profile information" secondary="3 days ago" />
-                    </ListItem>
+                    {messages.slice(0, 5).map((msg) => (
+                      <ListItem key={msg.id}>
+                        <ListItemIcon>
+                          <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                            {msg.senderName.charAt(0)}
+                          </Avatar>
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={`Message from ${msg.senderName}`}
+                          secondary={msg.timestamp}
+                        />
+                      </ListItem>
+                    ))}
+                    {savedStudies.slice(0, 5).map((study) => {
+                      const studyDate = study.timestamp ? new Date(study.timestamp.seconds * 1000) : null;
+                      const shortenedTitle = study.simplifiedTitle.length > 80 
+                        ? study.simplifiedTitle.substring(0, 80) + '...' 
+                        : study.simplifiedTitle; // Show first 80 characters, add ellipsis if longer
+
+                      return (
+                        <ListItem key={study.id}>
+                          <ListItemIcon>
+                            <ScienceIcon color="primary" />
+                          </ListItemIcon>
+                          <ListItemText
+                            // Only display the first 80 characters of the title
+                            primary={`Saved Study: ${shortenedTitle}`}
+                            secondary={studyDate ? studyDate.toLocaleString() : 'No date available'}
+                          />
+                        </ListItem>
+                      );
+                    })}
+                    {notifications.slice(0, 5).map((notif) => (
+                      <ListItem key={notif.id}>
+                        <ListItemIcon>
+                          <NotificationsIcon color="secondary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={notif.title}
+                          secondary={notif.timestamp}
+                        />
+                      </ListItem>
+                    ))}
+                    {messages.length === 0 && savedStudies.length === 0 && notifications.length === 0 && (
+                      <Typography>No recent activities to display.</Typography>
+                    )}
                   </List>
                 </CardContent>
               </Card>
             </Grid>
 
             {/* Saved Studies Section */}
-            <Grid item xs={12}>
-              <Typography
-                variant="h5"
-                sx={{
-                  mb: 3,
-                  color: theme.palette.primary.main,
-                  fontWeight: 'bold',
-                }}
-              >
-                Your Saved Studies
-              </Typography>
-              {loadingStudies ? (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '200px',
-                  }}
-                >
-                  <CircularProgress color="primary" />
-                </Box>
-              ) : savedStudies.length === 0 ? (
-                <Typography>No saved studies found.</Typography>
-              ) : (
-                <Grid container spacing={3}>
-                  {savedStudies.map((study) => (
-                    <Grid item xs={12} sm={6} md={4} key={study.id}>
-                      <Paper
-                        elevation={3}
-                        sx={{
-                          p: 3,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          position: 'relative',
-                          transition:
-                            'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-                          '&:hover': {
-                            transform: 'translateY(-5px)',
-                            boxShadow: '0 12px 24px rgba(0,0,0,0.3)',
-                          },
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          gutterBottom
-                          sx={{ color: theme.palette.primary.main }}
+            <Grid item xs={12} md={6}>
+              <Card>
+                <CardContent>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: theme.palette.primary.main,
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      Your Saved Studies
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<ScienceIcon />}
+                      onClick={() => router.push('/generate')}
+                    >
+                      Add New Study
+                    </Button>
+                  </Box>
+                  {loadingStudies ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        height: '150px',
+                      }}
+                    >
+                      <CircularProgress color="primary" />
+                    </Box>
+                  ) : filteredStudies.length === 0 ? (
+                    <Typography>No saved studies found.</Typography>
+                  ) : (
+                    <List>
+                      {filteredStudies.map((study) => (
+                        <ListItem
+                          key={study.id}
+                          secondaryAction={
+                            <Box>
+                              <Tooltip title="View Study">
+                                <IconButton
+                                  edge="end"
+                                  color="primary"
+                                  onClick={() => router.push(`/study/${study.id}`)}
+                                >
+                                  <VisibilityIcon />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Delete Study">
+                                <IconButton
+                                  edge="end"
+                                  color="error"
+                                  onClick={() => handleDeleteStudy(study.id)}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Tooltip>
+                            </Box>
+                          }
                         >
-                          Study ID: {study.simplifiedTitle}
-                        </Typography>
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              color: study.matchResult.match
-                                ? 'success.main'
-                                : 'error.main',
+                          <ListItemText
+                            primary={
+                              study.simplifiedTitle.charAt(0).toUpperCase() + study.simplifiedTitle.substring(1)
+                            }
+                            secondary={`Match: ${study.matchResult?.match ? 'Yes' : 'No'}`}
+                            primaryTypographyProps={{ fontWeight: 'medium' }}
+                            secondaryTypographyProps={{
+                              color: study.matchResult?.match ? 'success.main' : 'error.main',
                             }}
-                          >
-                            Match: {study.matchResult.match ? 'Yes' : 'No'}
-                          </Typography>
-                          <Box>
-                            <Tooltip title="View Study">
-                              <IconButton
-                                color="primary"
-                                onClick={() => router.push(`/study/${study.id}`)}
-                              >
-                                <VisibilityIcon />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Delete Study">
-                              <IconButton
-                                color="error"
-                                onClick={() => handleDeleteStudy(study.id)}
-                              >
-                                <DeleteIcon />
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </CardContent>
+              </Card>
             </Grid>
+
+            {/* Additional Sections (e.g., Upcoming Appointments) */}
+            {/* You can add more sections here as needed */}
           </Grid>
         </Box>
       </Box>
 
+      {/* Initial User Details Modal */}
+      <UserDetailsModal
+        open={initialDetailsModalOpen}
+        onClose={() => setInitialDetailsModalOpen(false)}
+        existingData={null}
+        onSave={handleSaveUserDetails}
+      />
+
+      {/* Edit Details Modal */}
+      <UserDetailsModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        existingData={userDetails}
+        onSave={handleSaveUserDetails}
+      />
+
       {/* Messages Dialog */}
-      <Dialog open={openMessagesDialog} onClose={handleCloseMessagesDialog} fullWidth maxWidth="md">
+      <Dialog
+        open={openMessagesDialog}
+        onClose={handleCloseMessagesDialog}
+        fullWidth
+        maxWidth="md"
+      >
         <DialogTitle>Inbox</DialogTitle>
         <DialogContent dividers>
           {messages.length === 0 ? (
@@ -800,23 +1069,35 @@ export default function Dashboard() {
           ) : (
             <List>
               {messages.map((msg) => (
-                <ListItemButton key={msg.id} onClick={() => handleSelectMessage(msg)}>
+                <ListItemButton
+                  key={msg.id}
+                  onClick={() => handleSelectMessage(msg)}
+                  sx={{
+                    backgroundColor: msg.read ? 'inherit' : 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 1,
+                    mb: 1,
+                    p: 1,
+                  }}
+                >
+                  <ListItemIcon>
+                    <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+                      {msg.senderName.charAt(0)}
+                    </Avatar>
+                  </ListItemIcon>
                   <ListItemText
-                    primary={`From: ${msg.senderName}`}
+                    primary={`Subject: ${msg.subject}`}
                     secondary={
                       <>
-                        <Typography component="span" variant="body2" color="text.primary">
-                          {typeof msg.timestamp === 'string' ? msg.timestamp : 'Unknown date'}
+                        <Typography
+                          component="span"
+                          variant="body2"
+                          color="text.primary"
+                        >
+                          From: {msg.senderName}
                         </Typography>
-                        {" — " + msg.message.slice(0, 50) + '...'}
+                        {" — " + (msg.message.length > 50 ? `${msg.message.slice(0, 50)}...` : msg.message)}
                       </>
                     }
-                    sx={{
-                      backgroundColor: msg.read ? 'inherit' : 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: 1,
-                      mb: 1,
-                      p: 1,
-                    }}
                   />
                 </ListItemButton>
               ))}
@@ -832,14 +1113,19 @@ export default function Dashboard() {
 
       {/* Selected Message Dialog */}
       {selectedMessage && (
-        <Dialog open={Boolean(selectedMessage)} onClose={() => setSelectedMessage(null)} fullWidth maxWidth="sm">
-          <DialogTitle>Message from Pharmacy</DialogTitle>
+        <Dialog
+          open={Boolean(selectedMessage)}
+          onClose={() => setSelectedMessage(null)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Message from {selectedMessage.senderName}</DialogTitle>
           <DialogContent dividers>
-            <Typography variant="body1" gutterBottom>
-              <strong>From:</strong> {selectedMessage.senderName}
-            </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              <strong>Sent:</strong> {typeof selectedMessage.timestamp === 'string' ? selectedMessage.timestamp : 'Unknown date'}
+              <strong>Sent:</strong> {selectedMessage.timestamp}
+            </Typography>
+            <Typography variant="h6" gutterBottom>
+              Subject: {selectedMessage.subject}
             </Typography>
             <Typography variant="body1">
               {selectedMessage.message}

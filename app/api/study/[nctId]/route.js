@@ -23,6 +23,9 @@ async function fetchStudyDetails(nctId) {
             }
 
             const protocolSection = trial.protocolSection;
+            const statusModule = protocolSection.statusModule; // Extract the statusModule
+            const overallStatus = statusModule?.overallStatus || "Not specified"; // Extract overallStatus
+
             const trialId = protocolSection.identificationModule.nctId;
             const minimumAge = protocolSection.eligibilityModule?.minimumAge || "Not specified";
             const locations = protocolSection.contactsLocationsModule?.locations || "Not specified";
@@ -36,6 +39,7 @@ async function fetchStudyDetails(nctId) {
                 leadSponsor: protocolSection.sponsorCollaboratorsModule?.leadSponsor?.name || "Not specified",
                 eligibilityCriteria: protocolSection.eligibilityModule?.eligibilityCriteria || "Not specified",
                 locations: locations,
+                overallStatus: overallStatus, // Include overallStatus in studyDetails
             };
 
             return studyDetails;
@@ -53,11 +57,11 @@ async function fetchStudyDetails(nctId) {
 async function simplifyDescription(description) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content: "Simplify the following study description, clarifying all medical terms, chemical formulas, devices, or hormones. Provide a clear and detailed explanation. Give a proper very simple to understadn FOR A PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE to understand description. Give explanation keeping professional that even a 10th grade student cna understand"
+                    content: "Simplify the following study description, clarifying all medical terms, chemical formulas, devices, or hormones. Provide a clear and detailed explanation. Give a proper very simple to understadn FOR A PERSON WITH VERY LITTLE MEDICAL KNOWLEDGE to understand description. Give explanation keeping professional that even a 10th grade student cna understand. Dont write anything like this **Study Description Simplified:** or **Explanation:** "
                 },
                 { role: "user", content: description }
             ]
@@ -74,11 +78,11 @@ async function simplifyDescription(description) {
 async function simplifyTitle(title) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-3.5-turbo",
+            model: "gpt-4o-mini",
             messages: [
                 {
                     role: "system",
-                    content: "Simplify the following study title, explaining medical terms, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title."
+                    content: "Simplify the following study title, explaining medical terms, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title.explaining medical terms in () next to the word, chemical formulas, devices, or hormones present."
                 },
                 { role: "user", content: title }
             ]
@@ -116,6 +120,7 @@ export async function GET(req, { params }) {
             leadSponsor: studyData.leadSponsor,
             eligibilityCriteria: studyData.eligibilityCriteria,
             locations: studyData.locations,
+            overallStatus: studyData.overallStatus, // Include overallStatus in the response
             detailedData: true,
         };
 

@@ -34,6 +34,10 @@ import {
   Snackbar,
   Alert,
   Fab,
+  Card,
+  CardContent,
+  Grid,
+  Divider,
 } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -55,6 +59,7 @@ import {
   serverTimestamp,
   addDoc,
 } from 'firebase/firestore';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -79,6 +84,9 @@ const theme = createTheme({
     mode: 'dark',
     primary: {
       main: '#8B5CF6',
+    },
+    secondary: {
+      main: '#03DAC6',
     },
     background: {
       default: '#121212',
@@ -127,6 +135,19 @@ const theme = createTheme({
         },
       },
     },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          padding: '10px 20px',
+          transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
+          '&:hover': {
+            boxShadow: `0 4px 12px rgba(139, 92, 246, 0.3)`,
+            backgroundColor: 'rgba(139, 92, 246, 0.9)',
+          },
+        },
+      },
+    },
   },
 });
 
@@ -149,8 +170,12 @@ export default function PharmacyDashboard() {
   });
 
   // New state for message sending
+  const [messageSubject, setMessageSubject] = useState('');
   const [messageText, setMessageText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
+
+  // State for analytics data
+  const [analyticsData, setAnalyticsData] = useState([]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -229,7 +254,7 @@ export default function PharmacyDashboard() {
           const studiesRef = collection(db, 'savedStudies');
           const standardizedPharmacyName = pharmacyName.trim().toLowerCase();
           console.log('Querying for leadSponsor:', standardizedPharmacyName);
-          const q = query(studiesRef, where('leadSponsor'.trim(), '==', standardizedPharmacyName));
+          const q = query(studiesRef, where('leadSponsor', '==', standardizedPharmacyName));
           const querySnapshot = await getDocs(q);
           const studies = [];
           querySnapshot.forEach((doc) => {
@@ -237,6 +262,7 @@ export default function PharmacyDashboard() {
           });
           console.log('Matching Studies:', studies);
           setMatchingStudies(studies);
+          generateAnalytics(studies);
         } catch (error) {
           console.error('Error fetching matching studies:', error);
         } finally {
@@ -253,6 +279,34 @@ export default function PharmacyDashboard() {
       fetchMatchingStudies();
     }
   }, [pharmacyName]);
+
+  // Function to generate analytics data (e.g., patients per month)
+  const generateAnalytics = (studies) => {
+    // Assuming each study has a timestamp indicating when a patient was matched
+    const dataMap = {};
+
+    studies.forEach((study) => {
+      if (study.timestamp && study.timestamp.toDate) {
+        const date = study.timestamp.toDate();
+        const month = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        if (dataMap[month]) {
+          dataMap[month] += 1;
+        } else {
+          dataMap[month] = 1;
+        }
+      }
+    });
+
+    const analyticsArray = Object.keys(dataMap).map((month) => ({
+      month,
+      patients: dataMap[month],
+    }));
+
+    // Sort the data by month
+    analyticsArray.sort((a, b) => new Date(a.month) - new Date(b.month));
+
+    setAnalyticsData(analyticsArray);
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -331,9 +385,21 @@ export default function PharmacyDashboard() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // New function to handle sending a message
+  // Updated function to handle sending a message with Subject
   const handleSendMessage = async (userId) => {
-    if (!messageText.trim()) {
+    const trimmedSubject = messageSubject.trim();
+    const trimmedMessage = messageText.trim();
+
+    if (!trimmedSubject) {
+      setSnackbar({
+        open: true,
+        message: 'Please enter a subject for your message.',
+        severity: 'error',
+      });
+      return;
+    }
+
+    if (!trimmedMessage) {
       setSnackbar({
         open: true,
         message: 'Please enter a message.',
@@ -347,7 +413,8 @@ export default function PharmacyDashboard() {
       const messageData = {
         senderId: user.id,
         receiverId: userId,
-        message: messageText.trim(),
+        subject: trimmedSubject,
+        message: trimmedMessage,
         timestamp: serverTimestamp(),
         read: false,
       };
@@ -359,6 +426,7 @@ export default function PharmacyDashboard() {
         message: 'Message sent successfully!',
         severity: 'success',
       });
+      setMessageSubject('');
       setMessageText('');
     } catch (error) {
       console.error('Error sending message:', error);
@@ -471,8 +539,32 @@ export default function PharmacyDashboard() {
               fontWeight: 'bold',
             }}
           >
-            {pharmacyName}
+            {pharmacyName.toUpperCase()}
           </Typography>
+
+          {/* Analytics Section */}
+          <Card sx={{ mb: 4, backgroundColor: '#1E1E1E', padding: 2 }}>
+            <CardContent>
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Patient Analytics
+              </Typography>
+              {analyticsData.length === 0 ? (
+                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                  No analytics data available.
+                </Typography>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={analyticsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#555" />
+                    <XAxis dataKey="month" stroke="#aaa" />
+                    <YAxis stroke="#aaa" allowDecimals={false} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="patients" stroke={theme.palette.primary.main} strokeWidth={2} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
 
           <Typography variant="h5" sx={{ mb: 3 }}>
             Users Matching Your Studies
@@ -501,7 +593,7 @@ export default function PharmacyDashboard() {
                     </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
-                  <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 1 }}>
                       Study Title: {study.simplifiedTitle.toUpperCase()}
                     </Typography>
 
@@ -511,17 +603,25 @@ export default function PharmacyDashboard() {
                     <Typography variant="body1" sx={{ mb: 1 }}>
                       Explanation: {study.matchResult?.explanation || 'N/A'}
                     </Typography>
+                    <Divider sx={{ mb: 2 }} />
                     <Typography variant="body1" sx={{ mb: 1 }}>
-                      Questions and Answers:
+                      <strong>Eligibility Criteria:</strong>
+                    </Typography>
+                    <Typography variant="body2" sx={{ mb: 2, whiteSpace: 'pre-line' }}>
+                      {study.eligibilityCriteria || 'N/A'}
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Questions and Answers:</strong>
                     </Typography>
                     {study.questions && study.answers && study.questions.length === study.answers.length ? (
                       study.questions.map((q, index) => (
                         <Box key={index} sx={{ mb: 2 }}>
                           <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            Q{index + 1}: {q.text}
+                            {`Q${index + 1}: ${q}`}
                           </Typography>
                           <Typography variant="body2" sx={{ ml: 2 }}>
-                            A: {study.answers[index]}
+                            {`A: ${study.answers[index]}`}
                           </Typography>
                         </Box>
                       ))
@@ -530,47 +630,74 @@ export default function PharmacyDashboard() {
                         No questions and answers available.
                       </Typography>
                     )}
-                    {/* New Message Sending UI */}
-                    <Box sx={{ mt: 2, display: 'flex', alignItems: 'flex-end' }}>
-                      <TextField
-                        fullWidth
-                        label="Send a message"
-                        variant="outlined"
-                        value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
-                        sx={{
-                          mr: 1,
-                          '& .MuiOutlinedInput-root': {
-                            '& fieldset': {
-                              borderColor: 'rgba(255, 255, 255, 0.23)',
-                            },
-                            '&:hover fieldset': {
-                              borderColor: 'rgba(255, 255, 255, 0.5)',
-                            },
-                            '&.Mui-focused fieldset': {
-                              borderColor: theme.palette.primary.main,
-                            },
-                          },
-                        }}
-                      />
-                      <Fab
-                        color="primary"
-                        aria-label="send"
-                        onClick={() => handleSendMessage(study.userId)}
-                        disabled={sendingMessage}
-                        sx={{
-                          width: 56,
-                          height: 56,
-                          minHeight: 56,
-                        }}
-                      >
-                        {sendingMessage ? (
-                          <CircularProgress size={24} color="inherit" />
-                        ) : (
-                          <SendIcon />
-                        )}
-                      </Fab>
-                    </Box>
+                    {/* Enhanced Message Sending UI */}
+                    <Card sx={{ mt: 2, backgroundColor: '#1E1E1E', padding: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ mb: 2 }}>
+                          Send a Message
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Subject"
+                              variant="outlined"
+                              value={messageSubject}
+                              onChange={(e) => setMessageSubject(e.target.value)}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  '& fieldset': {
+                                    borderColor: 'rgba(255, 255, 255, 0.23)',
+                                  },
+                                  '&:hover fieldset': {
+                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                  },
+                                  '&.Mui-focused fieldset': {
+                                    borderColor: theme.palette.primary.main,
+                                  },
+                                },
+                                mb: 2,
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              label="Message"
+                              variant="outlined"
+                              multiline
+                              rows={4}
+                              value={messageText}
+                              onChange={(e) => setMessageText(e.target.value)}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  '& fieldset': {
+                                    borderColor: 'rgba(255, 255, 255, 0.23)',
+                                  },
+                                  '&:hover fieldset': {
+                                    borderColor: 'rgba(255, 255, 255, 0.5)',
+                                  },
+                                  '&.Mui-focused fieldset': {
+                                    borderColor: theme.palette.primary.main,
+                                  },
+                                },
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sx={{ textAlign: 'right' }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              endIcon={<SendIcon />}
+                              onClick={() => handleSendMessage(study.userId)}
+                              disabled={sendingMessage}
+                            >
+                              {sendingMessage ? <CircularProgress size={24} color="inherit" /> : 'Send'}
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </CardContent>
+                    </Card>
                   </AccordionDetails>
                 </Accordion>
               ))}

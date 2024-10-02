@@ -2,21 +2,24 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Typography, Paper, Dialog, DialogTitle, DialogContent, DialogContentText,
   TextField, Button, CircularProgress, Box, CssBaseline, Switch, FormControlLabel,
   Stepper, Step, StepLabel, Card, CardContent, Chip, Fade,
   IconButton, Drawer, Slider, Checkbox, Radio, RadioGroup, FormControl, FormLabel,
-  Select, MenuItem, Grid, List, ListItem, ListItemText, InputAdornment
+  Select, MenuItem, Grid, List, ListItem, ListItemText, InputAdornment, Avatar,
 } from '@mui/material';
 import { createTheme, ThemeProvider, alpha } from '@mui/material/styles';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Person, LocationOn, Science, Group, Business, FilterList, Lightbulb } from '@mui/icons-material';
+import { Search, Person, LocationOn, Group, Business, FilterList, Lightbulb, Logout as LogoutIcon, Science } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
 import ImprovedAppBar from '@/app/ImprovedAppBar/page.js';
+import ScienceIcon from '@mui/icons-material/Science';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 // Define a modern and clean theme
 const theme = createTheme({
@@ -31,6 +34,7 @@ const theme = createTheme({
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
     h3: { fontSize: '2rem', fontWeight: 700 },
     h5: { fontSize: '1.5rem', fontWeight: 600 },
+    h6: { fontSize: '1.25rem', fontWeight: 500 },
     body1: { fontSize: '1rem' },
     body2: { fontSize: '0.875rem' },
     button: { textTransform: 'none', fontSize: '0.9rem' },
@@ -93,8 +97,32 @@ const theme = createTheme({
         },
       },
     },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: '16px',
+          fontSize: '0.75rem',
+        },
+      },
+    },
   },
 });
+
+// Helper function to determine the color and icon based on recruitment status
+const getStatusProps = (status) => {
+  const recruitingStatuses = [
+    "RECRUITING",
+    "ENROLLING_BY_INVITATION",
+    "ACTIVE_NOT_RECRUITING",
+    "AVAILABLE"
+  ];
+
+  if (recruitingStatuses.includes(status)) {
+    return { color: 'success', icon: <CheckCircleIcon /> };
+  } else {
+    return { color: 'error', icon: <CancelIcon /> };
+  }
+};
 
 // Define interesting facts with icons
 const interestingFacts = [
@@ -190,6 +218,101 @@ const LoadingWithFacts = () => {
 
 const steps = ['Disease/Condition', 'Age', 'Location', 'Intervention'];
 
+// Enhanced Clinical Trials List with improved design
+const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, selectedStudy, hasMore, loadMoreStudies }) => (
+  <Grid item xs={12} md={4}>
+    <Paper elevation={3} sx={{ p: 2, borderRadius: 2, mb: 3, maxHeight: '600px', overflowY: 'auto' }} id="study-list" ref={useRef(null)}>
+      <Typography variant="h5" sx={{ mb: 2 }}>Clinical Trials</Typography>
+      {loading && studies.length === 0 ? (
+        <LoadingWithFacts />
+      ) : studies.length > 0 ? (
+        <AnimatePresence mode="wait">
+          {studies.map((study, index) => (
+            <motion.div
+              key={study.ID}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+            >
+              <Card
+                id={`study-${study.ID}`}
+                sx={{
+                  mb: 2,
+                  bgcolor: selectedStudy?.ID === study.ID ? alpha(theme.palette.primary.main, 0.1) : 'background.paper',
+                  cursor: 'pointer',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  },
+                }}
+                onClick={() => handleStudyClick(study)}
+              >
+                <CardContent>
+                  <Grid container spacing={1} alignItems="center">
+                    {/* Study Number */}
+                    <Grid item xs={1}>
+                      <Avatar sx={{ bgcolor: '#03DAC6', width: 24, height: 24, fontSize: '0.8rem' }}>
+                        {index + 1}
+                      </Avatar>
+                    </Grid>
+                    {/* Study Details */}
+                    <Grid item xs={11}>
+                      <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#F5F5F5' }}>
+                        {study.simplifiedTitle}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip
+                          icon={<Person />}
+                          label={`Age: ${study.minimumAge}`}
+                          size="small"
+                          sx={{ bgcolor: alpha('#03DAC6', 0.2), color: '#FFFFFF' }}
+                        />
+                        <Chip
+                          icon={<Group />}
+                          label={`Participants: ${study.participants}`}
+                          size="small"
+                          sx={{ bgcolor: alpha('#03DAC6', 0.2), color: '#FFFFFF' }}
+                        />
+                        {study.overallStatus && (
+                          <Chip
+                            label={study.overallStatus.replace(/_/g, ' ')}
+                            size="small"
+                            color={getStatusProps(study.overallStatus).color}
+                            icon={getStatusProps(study.overallStatus).icon}
+                          />
+                        )}
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      ) : (
+        <Typography sx={{ textAlign: 'center', color: 'text.secondary' }}>No studies found.</Typography>
+      )}
+      {loading && studies.length > 0 && (
+        <LoadingWithFacts />
+      )}
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+          <Button
+            onClick={loadMoreStudies}
+            variant="outlined"
+            size="large"
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Load More'}
+          </Button>
+        </Box>
+      )}
+    </Paper>
+  </Grid>
+);
+
 export default function Generate() {
   const { user } = useUser();
   const router = useRouter();
@@ -213,6 +336,9 @@ export default function Generate() {
     ageRange: [0, 100],
     healthyVolunteers: false,
   });
+
+  // Ref to the study list container to manage scroll position
+  const studyListRef = useRef(null);
 
   useEffect(() => {
     // Load any saved data from sessionStorage
@@ -298,7 +424,7 @@ export default function Generate() {
       const structuredData = extractAndStructureData(data.studies);
 
       // Reset scroll position when new studies are loaded
-      const studyContainer = document.getElementById('study-list');
+      const studyContainer = studyListRef.current;
       if (studyContainer) {
         studyContainer.scrollTop = 0;
       }
@@ -401,6 +527,12 @@ export default function Generate() {
         setLoading(false);
       }
     }
+
+    // Scroll to the selected study
+    const studyElement = document.getElementById(`study-${study.ID}`);
+    if (studyElement) {
+      studyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   };
 
   const handleCheckEligibility = () => {
@@ -422,12 +554,14 @@ export default function Generate() {
   };
 
   const extractAndStructureData = (data) => {
-    return data.map(study => ({
+    return data.map((study, index) => ({
       ID: study.ID,
       originalTitle: study.originalTitle,
       simplifiedTitle: study.simplifiedTitle,
       minimumAge: study.minimumAge,
       participants: study.participants,
+      overallStatus: study.overallStatus, // Include recruitment status
+      // Additional fields can be added here as needed
     }));
   };
 
@@ -513,7 +647,7 @@ export default function Generate() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Science sx={{ color: '#BB86FC' }} />
+                  <ScienceIcon sx={{ color: '#BB86FC' }} />
                 </InputAdornment>
               ),
             }}
@@ -539,7 +673,7 @@ export default function Generate() {
     >
       <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Refine Your Search</Typography>
 
-      {/* Filters content remains the same */}
+      {/* Study Status Filter */}
       <FormControl component="fieldset" sx={{ mb: 3 }}>
         <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Study Status</FormLabel>
         <RadioGroup
@@ -547,12 +681,13 @@ export default function Generate() {
           onChange={(e) => handleFilterChange('status', e.target.value)}
         >
           <FormControlLabel value="all" control={<Radio />} label="All" />
-          <FormControlLabel value="recruiting" control={<Radio />} label="Recruiting" />
-          <FormControlLabel value="active" control={<Radio />} label="Active, not recruiting" />
-          <FormControlLabel value="completed" control={<Radio />} label="Completed" />
+          <FormControlLabel value="RECRUITING" control={<Radio />} label="Recruiting" />
+          <FormControlLabel value="ACTIVE_NOT_RECRUITING" control={<Radio />} label="Active, not recruiting" />
+          <FormControlLabel value="COMPLETED" control={<Radio />} label="Completed" />
         </RadioGroup>
       </FormControl>
 
+      {/* Study Phase Filter */}
       <Box sx={{ mb: 3 }}>
         <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Study Phase</FormLabel>
         {['Early Phase 1', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4'].map((phase) => (
@@ -575,6 +710,7 @@ export default function Generate() {
         ))}
       </Box>
 
+      {/* Gender Filter */}
       <FormControl fullWidth sx={{ mb: 3 }}>
         <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Gender</FormLabel>
         <Select
@@ -588,6 +724,7 @@ export default function Generate() {
         </Select>
       </FormControl>
 
+      {/* Age Range Filter */}
       <Box sx={{ mb: 3 }}>
         <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Age Range</FormLabel>
         <Slider
@@ -599,6 +736,7 @@ export default function Generate() {
         />
       </Box>
 
+      {/* Healthy Volunteers Filter */}
       <FormControlLabel
         control={
           <Checkbox
@@ -610,6 +748,7 @@ export default function Generate() {
         sx={{ mb: 3, fontSize: '0.8rem' }}
       />
 
+      {/* Apply Filters Button */}
       <Button
         variant="contained"
         fullWidth
@@ -652,7 +791,7 @@ export default function Generate() {
                       {index === 0 && <Search color={active || completed ? "primary" : "disabled"} />}
                       {index === 1 && <Person color={active || completed ? "primary" : "disabled"} />}
                       {index === 2 && <LocationOn color={active || completed ? "primary" : "disabled"} />}
-                      {index === 3 && <Science color={active || completed ? "primary" : "disabled"} />}
+                      {index === 3 && <ScienceIcon color={active || completed ? "primary" : "disabled"} />}
                     </motion.div>
                   )}>
                     {label}
@@ -705,64 +844,15 @@ export default function Generate() {
             </Paper>
           </Grid>
 
-          {/* Clinical Trials List */}
-          <Grid item xs={12} md={4}>
-            <Paper elevation={3} sx={{ p: 2, borderRadius: 2, mb: 3, maxHeight: '600px', overflowY: 'auto' }} id="study-list">
-              <Typography variant="h5" sx={{ mb: 2 }}>Clinical Trials</Typography>
-              {loading && studies.length === 0 ? (
-                <LoadingWithFacts />
-              ) : studies.length > 0 ? (
-                <AnimatePresence mode="wait">
-                  {studies.map((study, index) => (
-                    <motion.div
-                      key={study.ID}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2, delay: index * 0.05 }}
-                    >
-                      <Card
-                        sx={{
-                          mb: 2,
-                          bgcolor: selectedStudy?.ID === study.ID ? alpha(theme.palette.primary.main, 0.1) : 'background.paper',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => handleStudyClick(study)}
-                      >
-                        <CardContent>
-                          <Typography variant="h6" sx={{ mb: 1, fontWeight: 400 }}>
-                            {study.simplifiedTitle}
-                          </Typography>
-                          {/* Display min age and number of participants */}
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
-                            <Chip icon={<Person />} label={`Min Age: ${study.minimumAge}`} size="small" />
-                            <Chip icon={<Group />} label={`Participants: ${study.participants}`} size="small" />
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              ) : (
-                <Typography sx={{ textAlign: 'center', color: 'text.secondary' }}>No studies found.</Typography>
-              )}
-              {loading && studies.length > 0 && (
-                <LoadingWithFacts />
-              )}
-              {hasMore && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-                  <Button
-                    onClick={loadMoreStudies}
-                    variant="outlined"
-                    size="large"
-                    disabled={loading}
-                  >
-                    {loading ? <CircularProgress size={24} /> : 'Load More'}
-                  </Button>
-                </Box>
-              )}
-            </Paper>
-          </Grid>
+          {/* Enhanced Clinical Trials List */}
+          <EnhancedClinicalTrialsList
+            studies={studies}
+            loading={loading}
+            handleStudyClick={handleStudyClick}
+            selectedStudy={selectedStudy}
+            hasMore={hasMore}
+            loadMoreStudies={loadMoreStudies}
+          />
 
           {/* Study Details */}
           <Grid item xs={12} md={5}>
@@ -793,7 +883,7 @@ export default function Generate() {
                 selectedStudy.detailedData ? (
                   <Fade in={true}>
                     <Box>
-                      <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold' }}>
+                      <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#F5F5F5' }}>
                         {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
                       </Typography>
                       <Typography variant="body1" sx={{ mb: 2 }}>
@@ -814,14 +904,26 @@ export default function Generate() {
                             ))}
                           </List>
                         ) : (
-                          "Locations not specified"
+                          " Locations not specified"
                         )}
                       </Typography>
 
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
                         <Chip icon={<Person />} label={`Min Age: ${selectedStudy.minimumAge}`} size="small" />
                         <Chip icon={<Group />} label={`Participants: ${selectedStudy.participants}`} size="small" />
-                        <Chip icon={<Business />} label={`Lead Sponsor: ${selectedStudy.leadSponsor}`} size="small" />
+                        {selectedStudy.overallStatus && (
+                          <Chip
+                            label={selectedStudy.overallStatus.replace(/_/g, ' ')}
+                            size="small"
+                            color={getStatusProps(selectedStudy.overallStatus).color}
+                            icon={getStatusProps(selectedStudy.overallStatus).icon}
+                          />
+                        )}
+                        <Chip
+                          icon={<Business />}
+                          label={`Lead Sponsor: ${selectedStudy.leadSponsor}`}
+                          size="small"
+                        />
                       </Box>
                     </Box>
                   </Fade>
