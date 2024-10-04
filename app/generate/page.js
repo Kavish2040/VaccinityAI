@@ -21,34 +21,35 @@ import ScienceIcon from '@mui/icons-material/Science';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
-// Define a modern and clean theme
 const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#BB86FC' }, // Modern purple
-    secondary: { main: '#03DAC6' }, // Teal accent
+    primary: { main: '#3A7BD5' },
+    secondary: { main: '#03DAC6' },
     background: { default: '#121212', paper: '#1E1E1E' },
     text: { primary: '#FFFFFF', secondary: '#B0B0B0' },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h3: { fontSize: '2rem', fontWeight: 700 },
-    h5: { fontSize: '1.5rem', fontWeight: 600 },
-    h6: { fontSize: '1.25rem', fontWeight: 500 },
+    fontFamily: '"Montserrat", "Roboto", "Helvetica", "Arial", sans-serif',
+    h3: { fontSize: '2.5rem', fontWeight: 700 },
+    h5: { fontSize: '1.75rem', fontWeight: 600 },
+    h6: { fontSize: '1.5rem', fontWeight: 500 },
     body1: { fontSize: '1rem' },
-    body2: { fontSize: '0.875rem' },
-    button: { textTransform: 'none', fontSize: '0.9rem' },
+    body2: { fontSize: '0.9rem' },
+    button: { textTransform: 'none', fontSize: '1rem', fontWeight: 500 },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: 8,
-          padding: '10px 20px',
+          padding: '10px 24px',
+          fontSize: '1rem',
+          fontWeight: 500,
           transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
           '&:hover': {
-            boxShadow: `0 4px 12px ${alpha('#BB86FC', 0.3)}`,
-            backgroundColor: alpha('#BB86FC', 0.9),
+            boxShadow: `0 4px 12px ${alpha('#3A7BD5', 0.3)}`,
+            backgroundColor: alpha('#3A7BD5', 0.9),
           },
         },
       },
@@ -57,11 +58,11 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.2)',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
           transition: 'transform 0.3s ease, box-shadow 0.3s ease',
           '&:hover': {
             transform: 'translateY(-5px)',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
           },
         },
       },
@@ -85,8 +86,9 @@ const theme = createTheme({
     MuiStepLabel: {
       styleOverrides: {
         label: {
-          fontSize: '0.9rem',
+          fontSize: '0.95rem',
           color: '#FFFFFF',
+          fontWeight: 500,
         },
       },
     },
@@ -101,14 +103,14 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: '16px',
-          fontSize: '0.75rem',
+          fontSize: '0.85rem',
+          fontWeight: 500,
         },
       },
     },
   },
 });
 
-// Helper function to determine the color and icon based on recruitment status
 const getStatusProps = (status) => {
   const recruitingStatuses = [
     "RECRUITING",
@@ -124,7 +126,6 @@ const getStatusProps = (status) => {
   }
 };
 
-// Define interesting facts with icons
 const interestingFacts = [
   {
     icon: <Lightbulb />,
@@ -168,7 +169,6 @@ const interestingFacts = [
   },
 ];
 
-// LoadingWithFacts Component with enhanced design
 const LoadingWithFacts = () => {
   const [currentFactIndex, setCurrentFactIndex] = useState(0);
 
@@ -198,14 +198,14 @@ const LoadingWithFacts = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 p: 2,
-                bgcolor: alpha('#BB86FC', 0.1),
+                bgcolor: alpha('#3A7BD5', 0.1),
                 borderRadius: 2
               }}
             >
               <Box sx={{ mr: 2 }}>
                 {interestingFacts[currentFactIndex].icon}
               </Box>
-              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.95rem' }}>
                 {interestingFacts[currentFactIndex].text}
               </Typography>
             </Card>
@@ -218,11 +218,10 @@ const LoadingWithFacts = () => {
 
 const steps = ['Disease/Condition', 'Age', 'Location', 'Intervention'];
 
-// Enhanced Clinical Trials List with improved design
 const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, selectedStudy, hasMore, loadMoreStudies }) => (
   <Grid item xs={12} md={4}>
     <Paper elevation={3} sx={{ p: 2, borderRadius: 2, mb: 3, maxHeight: '600px', overflowY: 'auto' }} id="study-list" ref={useRef(null)}>
-      <Typography variant="h5" sx={{ mb: 2 }}>Clinical Trials</Typography>
+      <Typography variant="h5" sx={{ mb: 2, fontWeight: 600 }}>Clinical Trials</Typography>
       {loading && studies.length === 0 ? (
         <LoadingWithFacts />
       ) : studies.length > 0 ? (
@@ -244,7 +243,7 @@ const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, select
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   '&:hover': {
                     transform: 'scale(1.02)',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
                   },
                 }}
                 onClick={() => handleStudyClick(study)}
@@ -253,13 +252,13 @@ const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, select
                   <Grid container spacing={1} alignItems="center">
                     {/* Study Number */}
                     <Grid item xs={1}>
-                      <Avatar sx={{ bgcolor: '#03DAC6', width: 24, height: 24, fontSize: '0.8rem' }}>
+                      <Avatar sx={{ bgcolor: '#03DAC6', width: 28, height: 28, fontSize: '0.9rem', fontWeight: 500 }}>
                         {index + 1}
                       </Avatar>
                     </Grid>
                     {/* Study Details */}
                     <Grid item xs={11}>
-                      <Typography variant="h6" sx={{ mb: 1, fontWeight: 700, color: '#F5F5F5' }}>
+                      <Typography variant="h6" sx={{ mb: 1, fontWeight: 400, color: '#F5F5F5' }}>
                         {study.simplifiedTitle}
                       </Typography>
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -292,7 +291,7 @@ const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, select
           ))}
         </AnimatePresence>
       ) : (
-        <Typography sx={{ textAlign: 'center', color: 'text.secondary' }}>No studies found.</Typography>
+        <Typography sx={{ textAlign: 'center', color: 'text.secondary', fontSize: '1rem' }}>No studies found.</Typography>
       )}
       {loading && studies.length > 0 && (
         <LoadingWithFacts />
@@ -337,11 +336,9 @@ export default function Generate() {
     healthyVolunteers: false,
   });
 
-  // Ref to the study list container to manage scroll position
   const studyListRef = useRef(null);
 
   useEffect(() => {
-    // Load any saved data from sessionStorage
     const storedData = sessionStorage.getItem('searchData');
     if (storedData) {
       const { studies, text, age, location, intervention, nextPageToken } = JSON.parse(storedData);
@@ -568,11 +565,11 @@ export default function Generate() {
   const getStepContent = (step) => {
     const textFieldStyle = {
       '& .MuiInputBase-input': { color: '#FFFFFF', fontSize: '1rem' },
-      '& .MuiInputLabel-root': { color: '#B0B0B0', fontSize: '1rem' },
+      '& .MuiInputLabel-root': { color: '#3A7BD5', fontSize: '1rem' },
       '& .MuiOutlinedInput-root': {
-        '& fieldset': { borderColor: '#BB86FC' },
-        '&:hover fieldset': { borderColor: '#BB86FC' },
-        '&.Mui-focused fieldset': { borderColor: '#BB86FC' },
+        '& fieldset': { borderColor: '#3A7BD5' },
+        '&:hover fieldset': { borderColor: '#FFFFFF' },
+        '&.Mui-focused fieldset': { borderColor: '#FFFFFF' },
       }
     };
 
@@ -591,7 +588,7 @@ export default function Generate() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: '#BB86FC' }} />
+                  <Search sx={{ color: '#3A7BD5' }} />
                 </InputAdornment>
               ),
             }}
@@ -611,7 +608,7 @@ export default function Generate() {
               inputProps: { min: 0 },
               startAdornment: (
                 <InputAdornment position="start">
-                  <Person sx={{ color: '#BB86FC' }} />
+                  <Person sx={{ color: '#3A7BD5' }} />
                 </InputAdornment>
               ),
             }}
@@ -629,7 +626,7 @@ export default function Generate() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <LocationOn sx={{ color: '#BB86FC' }} />
+                  <LocationOn sx={{ color: '#3A7BD5' }} />
                 </InputAdornment>
               ),
             }}
@@ -647,7 +644,7 @@ export default function Generate() {
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <ScienceIcon sx={{ color: '#BB86FC' }} />
+                  <ScienceIcon sx={{ color: '#3A7BD5' }} />
                 </InputAdornment>
               ),
             }}
@@ -671,11 +668,11 @@ export default function Generate() {
         }
       }}
     >
-      <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>Refine Your Search</Typography>
+      <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>Refine Your Search</Typography>
 
       {/* Study Status Filter */}
       <FormControl component="fieldset" sx={{ mb: 3 }}>
-        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Study Status</FormLabel>
+        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.95rem', fontWeight: 500 }}>Study Status</FormLabel>
         <RadioGroup
           value={filters.status}
           onChange={(e) => handleFilterChange('status', e.target.value)}
@@ -689,7 +686,7 @@ export default function Generate() {
 
       {/* Study Phase Filter */}
       <Box sx={{ mb: 3 }}>
-        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.9rem' }}>Study Phase</FormLabel>
+        <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.95rem', fontWeight: 500 }}>Study Phase</FormLabel>
         {['Early Phase 1', 'Phase 1', 'Phase 2', 'Phase 3', 'Phase 4'].map((phase) => (
           <FormControlLabel
             key={phase}
@@ -705,14 +702,14 @@ export default function Generate() {
               />
             }
             label={phase}
-            sx={{ fontSize: '0.8rem' }}
+            sx={{ fontSize: '0.9rem' }}
           />
         ))}
       </Box>
 
       {/* Gender Filter */}
       <FormControl fullWidth sx={{ mb: 3 }}>
-        <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Gender</FormLabel>
+        <FormLabel sx={{ mb: 1, fontSize: '0.95rem', fontWeight: 500 }}>Gender</FormLabel>
         <Select
           value={filters.gender}
           onChange={(e) => handleFilterChange('gender', e.target.value)}
@@ -726,7 +723,7 @@ export default function Generate() {
 
       {/* Age Range Filter */}
       <Box sx={{ mb: 3 }}>
-        <FormLabel sx={{ mb: 1, fontSize: '0.9rem' }}>Age Range</FormLabel>
+        <FormLabel sx={{ mb: 1, fontSize: '0.95rem', fontWeight: 500 }}>Age Range</FormLabel>
         <Slider
           value={filters.ageRange}
           onChange={(e, newValue) => handleFilterChange('ageRange', newValue)}
@@ -745,7 +742,7 @@ export default function Generate() {
           />
         }
         label="Accepts healthy volunteers"
-        sx={{ mb: 3, fontSize: '0.8rem' }}
+        sx={{ mb: 3, fontSize: '0.9rem' }}
       />
 
       {/* Apply Filters Button */}
@@ -827,7 +824,7 @@ export default function Generate() {
           <Grid item xs={12} md={3}>
             <Paper elevation={3} sx={{ p: 2, borderRadius: 2, mb: 3 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6">Filters</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>Filters</Typography>
                 <IconButton onClick={() => setOpenFilters(true)}>
                   <FilterList />
                 </IconButton>
@@ -883,7 +880,7 @@ export default function Generate() {
                 selectedStudy.detailedData ? (
                   <Fade in={true}>
                     <Box>
-                      <Typography variant="h5" sx={{ mb: 2, fontWeight: 'bold', color: '#F5F5F5' }}>
+                      <Typography variant="h5" sx={{ mb: 2, color: '#F5F5F5' }}>
                         {showSimplified ? selectedStudy.simplifiedTitle : selectedStudy.originalTitle}
                       </Typography>
                       <Typography variant="body1" sx={{ mb: 2 }}>
@@ -933,7 +930,7 @@ export default function Generate() {
                   </Box>
                 )
               ) : (
-                <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary' }}>
+                <Typography variant="body1" sx={{ textAlign: 'center', color: 'text.secondary', fontSize: '1rem' }}>
                   Select a study to see more details.
                 </Typography>
               )}
@@ -957,9 +954,9 @@ export default function Generate() {
             }
           }}
         >
-          <DialogTitle sx={{ fontSize: '1.2rem' }}>How to Use This Page</DialogTitle>
+          <DialogTitle sx={{ fontSize: '1.2rem', fontWeight: 600 }}>How to Use This Page</DialogTitle>
           <DialogContent>
-            <DialogContentText sx={{ fontSize: '0.95rem' }}>
+            <DialogContentText sx={{ fontSize: '1rem', lineHeight: 1.6 }}>
               Enter details about the disease or condition, patient age, preferred location, and intervention/treatment to find relevant studies. Use the filters to refine your search. Click on a study to view more details.
             </DialogContentText>
           </DialogContent>

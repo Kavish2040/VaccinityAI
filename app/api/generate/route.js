@@ -39,7 +39,7 @@ async function simplifyTitle(title) {
             messages: [
                 {
                     role: "system",
-                    content: "Simplify the following study title, explaining medical terms in () next to the word itself not at the end, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title such that a 10th grader can read and fully comprehend it.  Don't write anything like 'Simplified Title:. Keep titles concise and easy to read. EXPLAIN ANY COMPLICATED WORDS NOT JUST MEDICAL WORDS IN () NEXT TO THE WORD ITSELF'"
+                    content: "Simplify the following study title, explaining medical terms in () next to the word itself not at the end, chemical formulas, devices, or hormones present. Don't change any meanings, just provide a simplified title such that a 10th grader can read and fully comprehend it.  Don't write anything like 'Simplified Title:. Keep titles concise and easy to read. EXPLAIN ONLY ANY COMPLICATED WORDS NOT JUST MEDICAL WORDS IN () NEXT TO THE WORD ITSELF NOT SIMPLE TO UNDERSTAND WORDS. WRITE CONCISE TITLES NOT VERY LONG'"
                 },
                 { role: "user", content: title }
             ]

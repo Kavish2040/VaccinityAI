@@ -1,4 +1,5 @@
 // app/complete-signup/page.js
+
 "use client";
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -10,9 +11,13 @@ export default function CompleteSignup() {
 
   useEffect(() => {
     if (isLoaded && user) {
+      // Extract query parameters from the URL
       const params = new URLSearchParams(window.location.search);
       const userType = params.get('userType');
+      const condition = params.get('condition'); // Extract the 'condition' parameter
+
       console.log('CompleteSignup: userType =', userType);
+      console.log('CompleteSignup: condition =', condition);
 
       if (!userType) {
         console.error('User type not found in query parameters');
@@ -20,7 +25,7 @@ export default function CompleteSignup() {
         return;
       }
 
-      // Update user's unsafeMetadata with userType
+  
       user
         .update({
           unsafeMetadata: { userType },
@@ -29,8 +34,15 @@ export default function CompleteSignup() {
           console.log('User metadata updated successfully');
           console.log('Redirecting to appropriate dashboard based on userType');
           if (userType === 'patient') {
+          
             console.log('Redirecting to /dashboard');
-            router.push('/dashboard');
+        
+            if (condition) {
+              console.log("aaya")
+              router.push(`/dashboard?condition=${encodeURIComponent(condition)}`);
+            } else {
+              router.push('/dashboard');
+            }
           } else if (userType === 'pharmacy') {
             console.log('Redirecting to /pharmacy-dashboard');
             router.push('/pharmacy-dashboard');

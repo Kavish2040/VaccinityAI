@@ -1,4 +1,5 @@
 // app/sign-up/page.js
+
 "use client";
 import React, { useState, useEffect } from 'react';
 import Image from "next/image";
@@ -19,6 +20,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { PersonOutline, Business } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 const theme = createTheme({
   palette: {
@@ -53,11 +55,20 @@ const ToggleButton = styled(Button)(({ theme, selected }) => ({
 export default function SignUpPage() {
   const [userType, setUserType] = useState('patient');
   const router = useRouter();
-
-  // Log userType changes for debugging
+  const searchParams = useSearchParams();
+  const condition = searchParams.get('condition') || '';
+  
   useEffect(() => {
     console.log('SignUpPage: userType =', userType);
-  }, [userType]);
+    console.log('SignUpPage: condition =', condition);
+  }, [userType, condition]);
+
+
+  // Log userType and condition for debugging
+  useEffect(() => {
+    console.log('SignUpPage: userType =', userType);
+    console.log('SignUpPage: condition =', condition);
+  }, [userType, condition]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -119,7 +130,7 @@ export default function SignUpPage() {
             path="/sign-up"
             routing="path"
             signInUrl="/sign-in"
-            afterSignUpUrl={`/complete-signup?userType=${encodeURIComponent(userType)}`}
+            afterSignUpUrl={`/complete-signup?userType=${encodeURIComponent(userType)}&condition=${encodeURIComponent(condition)}`}
             appearance={{
               elements: {
                 formButtonPrimary: {

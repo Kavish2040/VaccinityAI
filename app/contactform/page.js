@@ -11,8 +11,9 @@ import {
   InputAdornment,
   CircularProgress,
   Container,
+  Paper,
 } from '@mui/material';
-import { Person, Email, Message } from '@mui/icons-material';
+import { Person, Email, Message, Send } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
 const ContactForm = () => {
@@ -40,7 +41,6 @@ const ContactForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      // API call to send email to backend
       const response = await fetch('http://localhost:3001/send-email', {
         method: 'POST',
         headers: {
@@ -49,18 +49,15 @@ const ContactForm = () => {
         body: JSON.stringify(formData),
       });
   
-      // Check if the response is okay (status 200-299)
       if (response.ok) {
         const data = await response.json();
-        // Assuming successful email send returns an object with a message or success flag
         setSnackbar({
           open: true,
           message: 'Message sent successfully!',
           severity: 'success',
         });
-        setFormData({ name: '', email: '', message: '' }); // Reset form
+        setFormData({ name: '', email: '', message: '' });
       } else {
-        // Handle specific error messages from the backend
         const errorData = await response.json();
         throw new Error(errorData.message || 'Something went wrong!');
       }
@@ -70,28 +67,24 @@ const ContactForm = () => {
             message: 'Message sent successfully!',
             severity: 'success',
           });
-          setFormData({ name: '', email: '', message: '' }); // Reset form
+          setFormData({ name: '', email: '', message: '' });
     } finally {
       setLoading(false);
     }
   };
 
   const purpleTheme = {
-    main: '#8C52FF', // Bright purple color from the "Sign Up" button
-    light: '#A881FF', // Lighter shade of purple
-    dark: '#6A3CB5', // Darker shade of purple
+    main: '#3A7BD5',
+    light: '#A881FF',
+    dark: '#6A3CB5',
   };
 
   return (
-    <Container maxWidth="lg">
-      <Box
-        sx={{
-          my: 12,
-          width: '100%',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
+    <Box sx={{
+      width: '100%',
+      py: 10,
+    }}>
+      <Container maxWidth="lg">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -102,168 +95,170 @@ const ContactForm = () => {
             gutterBottom 
             textAlign="center" 
             sx={{ 
-              mb: 6, 
+              mb: 2, 
               fontWeight: 'bold',
-              color: purpleTheme.main,
-              textShadow: `0 0 2px`,
-              color: 'white'
+              color: '#3A7BD5',
             }}
           >
             Get in Touch
           </Typography>
-          <form onSubmit={handleSubmit}>
-            <Grid container spacing={4}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Person sx={{ color: purpleTheme.light }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: `${purpleTheme.main}50`,
-                      },
-                      '&:hover fieldset': {
-                        borderColor: purpleTheme.light,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: purpleTheme.main,
-                      },
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: `${purpleTheme.light}CC`,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Email sx={{ color: purpleTheme.light }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: `${purpleTheme.main}50`,
-                      },
-                      '&:hover fieldset': {
-                        borderColor: purpleTheme.light,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: purpleTheme.main,
-                      },
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: `${purpleTheme.light}CC`,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Message"
-                  name="message"
-                  multiline
-                  rows={6}
-                  value={formData.message}
-                  onChange={handleChange}
-                  required
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Message sx={{ color: purpleTheme.light, alignSelf: 'flex-start', mt: 1.5 }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      '& fieldset': {
-                        borderColor: `${purpleTheme.main}50`,
-                      },
-                      '&:hover fieldset': {
-                        borderColor: purpleTheme.light,
-                      },
-                      '&.Mui-focused fieldset': {
-                        borderColor: purpleTheme.main,
-                      },
-                    },
-                    '& .MuiInputBase-input': {
-                      color: '#fff',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: `${purpleTheme.light}CC`,
-                    },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} textAlign="center">
-                <motion.div 
-                  whileHover={{ scale: 1.05 }} 
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    disabled={loading}
-                    startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          <Typography
+            variant="h6"
+            textAlign="center"
+            sx={{ mb: 6, color: 'rgba(0, 0, 0, 0.7)' }}
+          >
+            We're here to help and answer any question you might have.
+          </Typography>
+          <Paper elevation={3} sx={{ p: 6, borderRadius: 4, bgcolor: 'white' }}>
+            <form onSubmit={handleSubmit}>
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Person sx={{ color: purpleTheme.main }} />
+                        </InputAdornment>
+                      ),
+                    }}
                     sx={{
-                      mt: 2,
-                      py: 2,
-                      px: 6,
-                      mb:2,
-                      borderRadius: '50px',
-                      backgroundColor: purpleTheme.main,
-                      color: 'white',
-                      boxShadow: `0 3px 5px 2px ${purpleTheme.main}40`,
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        backgroundColor: purpleTheme.dark,
-                        boxShadow: `0 4px 10px 2px ${purpleTheme.main}60`,
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                        '&:hover fieldset': {
+                          borderColor: purpleTheme.dark,
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                      },
+                      '& .MuiInputBase-input': {
+                        color: 'black',
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: 'black',
                       },
                     }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Email sx={{ color: purpleTheme.main }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                        '&:hover fieldset': {
+                          borderColor: purpleTheme.dark,
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                      },
+                      '& .MuiInputBase-input': {
+                        color: 'black',
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: 'black',
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Message"
+                    name="message"
+                    multiline
+                    rows={6}
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Message sx={{ color: purpleTheme.main, alignSelf: 'flex-start', mt: 1.5 }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                        '&:hover fieldset': {
+                          borderColor: purpleTheme.dark,
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: purpleTheme.main,
+                        },
+                      },
+                      '& .MuiInputBase-input': {
+                        color: 'black',
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: 'black',
+                      },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} textAlign="center">
+                  <motion.div 
+                    whileHover={{ scale: 1.05 }} 
+                    whileTap={{ scale: 0.95 }}
                   >
-                    {loading ? 'Sending...' : 'Send Message'}
-                  </Button>
-                </motion.div>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={loading}
+                      endIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Send />}
+                      sx={{
+                        mt: 2,
+                        py: 1.5,
+                        px: 6,
+                        borderRadius: '50px',
+                        backgroundColor: purpleTheme.main,
+                        color: 'white',
+                        '&:hover': {
+                          backgroundColor: purpleTheme.dark,
+                        },
+                      }}
+                    >
+                      {loading ? 'Sending...' : 'Send Message'}
+                    </Button>
+                  </motion.div>
+                </Grid>
               </Grid>
-            </Grid>
-          </form>
+            </form>
+          </Paper>
         </motion.div>
-      </Box>
+      </Container>
 
-      {/* Snackbar for Feedback */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -274,7 +269,7 @@ const ContactForm = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 

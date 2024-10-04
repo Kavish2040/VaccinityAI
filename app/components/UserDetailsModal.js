@@ -34,28 +34,30 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  doc,
 } from 'firebase/firestore';
 
+// Styled Components for Enhanced Aesthetics
 const StyledDialog = styled(Dialog)(({ theme }) => ({
   '& .MuiDialog-paper': {
-    borderRadius: 16,
-    padding: theme.spacing(3),
-    backgroundColor: theme.palette.background.default,
+    borderRadius: 20,
+    padding: theme.spacing(4),
+    backgroundColor: theme.palette.background.paper,
   },
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: 25,
-  padding: theme.spacing(1, 4),
-  transition: 'all 0.3s',
+  borderRadius: 30,
+  padding: theme.spacing(1.5, 5),
+  transition: 'all 0.3s ease',
+  boxShadow: theme.shadows[2],
   '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: theme.shadows[4],
+    transform: 'translateY(-3px)',
+    boxShadow: theme.shadows[6],
   },
 }));
 
 const AnimatedTypography = styled(Typography)(({ theme }) => ({
+  fontFamily: 'Roboto, sans-serif',
   transition: 'opacity 0.5s ease, transform 0.5s ease',
 }));
 
@@ -234,19 +236,12 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
 
   return (
     <StyledDialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{existingData ? 'Edit Your Details' : 'Complete Your Profile'}</DialogTitle>
-      <DialogContent>
-        <AnimatedTypography
-          variant="h4"
-          gutterBottom
-          style={{
-            opacity: 1,
-            transform: 'translateY(0)',
-          }}
-        >
+      <DialogTitle>
+        <AnimatedTypography variant="h5">
           {existingData ? 'Edit Your Details' : 'Complete Your Profile'}
         </AnimatedTypography>
-
+      </DialogTitle>
+      <DialogContent>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
           {questions.map((_, index) => (
             <Step key={index}>
@@ -262,7 +257,7 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
               gutterBottom
               style={{
                 opacity: 1,
-                transform: 'translateX(0)',
+                transform: 'translateY(0)',
               }}
             >
               {currentQuestion.label}
@@ -273,8 +268,28 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
                 <Select
                   value={formData[currentQuestion.field]}
                   onChange={(e) => handleChange(currentQuestion.field, e.target.value)}
-                  sx={{ mt: 2, borderRadius: 2 }}
+                  sx={{
+                    mt: 2,
+                    borderRadius: 2,
+                    backgroundColor: '#333', // Dark background
+                    color: '#fff', // White text
+                    '& .MuiSelect-select': {
+                      padding: '12px 14px',
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#555', // Darker border
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: '#777',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: theme.palette.primary.main,
+                    },
+                  }}
                   displayEmpty
+                  inputProps={{
+                    'aria-label': currentQuestion.label,
+                  }}
                 >
                   <MenuItem value="">
                     <em>Select an option</em>
@@ -295,13 +310,18 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
                           checked={formData[currentQuestion.field] === option}
                           onChange={() => handleChange(currentQuestion.field, option)}
                           sx={{
+                            color: theme.palette.primary.main,
                             '&.Mui-checked': {
                               color: theme.palette.primary.main,
                             },
                           }}
                         />
                       }
-                      label={option}
+                      label={
+                        <Typography variant="body1" sx={{ color: '#fff' }}>
+                          {option}
+                        </Typography>
+                      }
                     />
                   ))}
                 </Box>
@@ -311,7 +331,37 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
                   variant="outlined"
                   value={formData[currentQuestion.field]}
                   onChange={(e) => handleChange(currentQuestion.field, e.target.value)}
-                  sx={{ mt: 2 }}
+                  sx={{
+                    mt: 2,
+                    backgroundColor: '#333', // Dark background
+                    borderRadius: 2,
+                    '& .MuiOutlinedInput-root': {
+                      color: '#fff', // White text
+                      '& fieldset': {
+                        borderColor: '#555', // Darker border
+                      },
+                      '&:hover fieldset': {
+                        borderColor: '#777',
+                      },
+                      '&.Mui-focused fieldset': {
+                        borderColor: theme.palette.primary.main,
+                      },
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: '#aaa', // Light label
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                      color: theme.palette.primary.main,
+                    },
+                    '& .MuiInputBase-input::placeholder': {
+                      color: '#aaa', // Light placeholder
+                      opacity: 1,
+                    },
+                  }}
+                  placeholder="Enter your answer"
+                  inputProps={{
+                    'aria-label': currentQuestion.label,
+                  }}
                 />
               )}
               {errors[currentQuestion.field] && (
@@ -329,17 +379,25 @@ const UserDetailsModal = ({ open, onClose, existingData, onSave }) => {
             onClick={handleBack}
             disabled={activeStep === 0}
             variant="outlined"
+            sx={{
+              borderColor: theme.palette.primary.main,
+              color: theme.palette.primary.main,
+              '&:hover': {
+                borderColor: theme.palette.primary.light,
+                backgroundColor: 'rgba(25, 118, 210, 0.04)',
+              },
+            }}
           >
             Back
           </Button>
-          <Button
+          <StyledButton
             onClick={activeStep === questions.length - 1 ? handleSubmit : handleNext}
             variant="contained"
             color="primary"
             disabled={submitting}
           >
             {submitting ? <CircularProgress size={24} color="inherit" /> : (activeStep === questions.length - 1 ? 'Submit' : 'Next')}
-          </Button>
+          </StyledButton>
         </Box>
       </DialogActions>
     </StyledDialog>

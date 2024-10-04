@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter,  useSearchParams } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { SignOutButton } from '@clerk/nextjs';
 
@@ -165,7 +165,7 @@ export default function Dashboard() {
   const router = useRouter();
   const { isLoaded, user } = useUser();
   const { openUserProfile } = useClerk();
-
+  const searchParams = useSearchParams();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [savedStudies, setSavedStudies] = useState([]);
   const [loadingStudies, setLoadingStudies] = useState(true);
@@ -197,11 +197,21 @@ export default function Dashboard() {
   // State for Initial Details Modal
   const [initialDetailsModalOpen, setInitialDetailsModalOpen] = useState(false);
 
+  const [condition, setCondition] = useState('');
+
+  useEffect(() => {
+    const conditionParam = searchParams.get('condition');
+    if (conditionParam) {
+      setCondition(conditionParam);
+    } else if (userDetails && userDetails.condition) {
+      setCondition(userDetails.condition);
+    }
+  }, [searchParams, userDetails]);
   // Handle Drawer Toggle
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
-
+  
   // Handle Profile Menu
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -303,27 +313,27 @@ export default function Dashboard() {
 
   // Fetch messages for the patient
   useEffect(() => {
+    let intervalId;
+  
     const fetchMessages = async () => {
       if (!user?.id) {
         console.log('User not found, cannot fetch messages');
         return;
       }
-
+  
       console.log('Fetching messages for user ID:', user.id);
-
+  
       try {
         const messagesQuery = query(
           collection(db, 'messages'),
           where('receiverId', '==', user.id)
         );
         const messagesSnapshot = await getDocs(messagesQuery);
-
-        console.log('Query snapshot size:', messagesSnapshot.size);
-
+  
         const msgs = [];
         let unread = 0;
         const senderIdsToFetch = new Set();
-
+  
         messagesSnapshot.forEach((docSnap) => {
           const data = docSnap.data();
           msgs.push({
@@ -333,50 +343,42 @@ export default function Dashboard() {
               ? data.timestamp.toDate().toLocaleString()
               : (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
           });
-
+  
           if (!data.read) unread += 1;
-
-          // Collect sender IDs to fetch their names
+  
           if (data.senderId) {
             senderIdsToFetch.add(data.senderId);
           }
         });
-
-        // Fetch sender names using document IDs
+  
+        let sendersMap = {};
         if (senderIdsToFetch.size > 0) {
-          // Firestore allows a maximum of 10 items in an 'in' query
           const senderIdsArray = Array.from(senderIdsToFetch);
           const chunkSize = 10;
           const senderChunks = [];
-
+  
           for (let i = 0; i < senderIdsArray.length; i += chunkSize) {
             senderChunks.push(senderIdsArray.slice(i, i + chunkSize));
           }
-
-          const sendersMap = {};
-
+  
           for (const chunk of senderChunks) {
             const sendersQuery = query(
               collection(db, 'Pharmacy'),
               where(documentId(), 'in', chunk)
             );
             const sendersSnapshot = await getDocs(sendersQuery);
-
+  
             sendersSnapshot.forEach((doc) => {
               sendersMap[doc.id] = doc.data().pharmacyName.toUpperCase() || 'UNKNOWN PHARMACY';
             });
           }
-
-          setSenders(sendersMap);
         }
-
-        // Map sender names to messages
+  
         const mappedMessages = msgs.map((msg) => ({
           ...msg,
-          senderName: senders[msg.senderId] || 'UNKNOWN PHARMACY',
+          senderName: sendersMap[msg.senderId] || 'UNKNOWN PHARMACY',
         }));
-
-        // Sort messages by timestamp descending
+  
         mappedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setMessages(mappedMessages);
         setUnreadCount(unread);
@@ -386,11 +388,17 @@ export default function Dashboard() {
         setUnreadCount(0);
       }
     };
-
+  
     if (user) {
-      fetchMessages();
+      fetchMessages(); // Fetch immediately
+      intervalId = setInterval(fetchMessages, 10 * 60 * 1000); // Fetch every 5 minutes
     }
-  }, [user, senders]);
+  
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [user]);
+  
 
   // Fetch notifications
   useEffect(() => {
@@ -782,6 +790,7 @@ export default function Dashboard() {
                         </Button>
                       </Box>
                       <Grid container spacing={2}>
+                      
                         <Grid item xs={6}>
                           <Typography variant="subtitle2" color="text.secondary">
                             Type of Cancer:
@@ -818,12 +827,20 @@ export default function Dashboard() {
                           </Typography>
                           <Typography variant="body1">{userDetails.gender}</Typography>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid item xs={6}>
                           <Typography variant="subtitle2" color="text.secondary">
                             Ethnicity:
                           </Typography>
                           <Typography variant="body1">{userDetails.ethnicity}</Typography>
                         </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="subtitle2" color="text.secondary">
+                            Condition:
+                          </Typography>
+                          <Typography variant="body1">{condition}</Typography>
+                        </Grid>
+                       
+ 
                       </Grid>
                     </Card>
                   </Box>
