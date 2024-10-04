@@ -192,7 +192,7 @@ const HeroSection = () => {
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1}}
+          transition={{ duration: 1, delay: 1.25}}
         >
               <Typography
             variant="h5"
@@ -356,7 +356,7 @@ const CustomAppBar = () => {
               fontWeight: 500,
               fontSize: '1rem',
               color: scrolling ? '#000000' : '#FFFFFF',
-              '&:hover': { color: '#000000' },
+              '&:hover': { color: 'orange' },
               transition: 'color 0.3s ease',
             }}
           >
@@ -369,7 +369,7 @@ const CustomAppBar = () => {
               fontWeight: 500,
               fontSize: '1rem',
               color: scrolling ? '#000000' : '#FFFFFF',
-              '&:hover': { color: '#000000' },
+              '&:hover': { color: 'orange' },
               transition: 'color 0.3s ease',
             }}
           >

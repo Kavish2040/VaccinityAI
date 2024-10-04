@@ -252,7 +252,7 @@ const EnhancedClinicalTrialsList = ({ studies, loading, handleStudyClick, select
                   <Grid container spacing={1} alignItems="center">
                     {/* Study Number */}
                     <Grid item xs={1}>
-                      <Avatar sx={{ bgcolor: '#03DAC6', width: 28, height: 28, fontSize: '0.9rem', fontWeight: 500 }}>
+                      <Avatar sx={{ bgcolor: '#03DAC6', width: 20, height: 20, fontSize: '0.9rem', fontWeight: 500 }}>
                         {index + 1}
                       </Avatar>
                     </Grid>

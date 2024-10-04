@@ -38,7 +38,7 @@ const db = getFirestore(app);
 const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#8B5CF6' },
+    primary: { main: '#3A7BD5' },
     background: { default: '#121212', paper: '#1E1E1E' },
     text: { primary: '#FFFFFF', secondary: '#B0B0B0' },
   },

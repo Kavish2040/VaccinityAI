@@ -1,9 +1,7 @@
-// app/components/Dashboard.js
-
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useRouter,  useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { SignOutButton } from '@clerk/nextjs';
 
@@ -198,20 +196,13 @@ export default function Dashboard() {
   const [initialDetailsModalOpen, setInitialDetailsModalOpen] = useState(false);
 
   const [condition, setCondition] = useState('');
+  const [userDetailsDocId, setUserDetailsDocId] = useState(null);
 
-  useEffect(() => {
-    const conditionParam = searchParams.get('condition');
-    if (conditionParam) {
-      setCondition(conditionParam);
-    } else if (userDetails && userDetails.condition) {
-      setCondition(userDetails.condition);
-    }
-  }, [searchParams, userDetails]);
   // Handle Drawer Toggle
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
-  
+
   // Handle Profile Menu
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
@@ -314,26 +305,26 @@ export default function Dashboard() {
   // Fetch messages for the patient
   useEffect(() => {
     let intervalId;
-  
+
     const fetchMessages = async () => {
       if (!user?.id) {
         console.log('User not found, cannot fetch messages');
         return;
       }
-  
+
       console.log('Fetching messages for user ID:', user.id);
-  
+
       try {
         const messagesQuery = query(
           collection(db, 'messages'),
           where('receiverId', '==', user.id)
         );
         const messagesSnapshot = await getDocs(messagesQuery);
-  
+
         const msgs = [];
         let unread = 0;
         const senderIdsToFetch = new Set();
-  
+
         messagesSnapshot.forEach((docSnap) => {
           const data = docSnap.data();
           msgs.push({
@@ -343,42 +334,42 @@ export default function Dashboard() {
               ? data.timestamp.toDate().toLocaleString()
               : (typeof data.timestamp === 'string' ? data.timestamp : 'Unknown date')
           });
-  
+
           if (!data.read) unread += 1;
-  
+
           if (data.senderId) {
             senderIdsToFetch.add(data.senderId);
           }
         });
-  
+
         let sendersMap = {};
         if (senderIdsToFetch.size > 0) {
           const senderIdsArray = Array.from(senderIdsToFetch);
           const chunkSize = 10;
           const senderChunks = [];
-  
+
           for (let i = 0; i < senderIdsArray.length; i += chunkSize) {
             senderChunks.push(senderIdsArray.slice(i, i + chunkSize));
           }
-  
+
           for (const chunk of senderChunks) {
             const sendersQuery = query(
               collection(db, 'Pharmacy'),
               where(documentId(), 'in', chunk)
             );
             const sendersSnapshot = await getDocs(sendersQuery);
-  
+
             sendersSnapshot.forEach((doc) => {
               sendersMap[doc.id] = doc.data().pharmacyName.toUpperCase() || 'UNKNOWN PHARMACY';
             });
           }
         }
-  
+
         const mappedMessages = msgs.map((msg) => ({
           ...msg,
           senderName: sendersMap[msg.senderId] || 'UNKNOWN PHARMACY',
         }));
-  
+
         mappedMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setMessages(mappedMessages);
         setUnreadCount(unread);
@@ -388,17 +379,16 @@ export default function Dashboard() {
         setUnreadCount(0);
       }
     };
-  
+
     if (user) {
       fetchMessages(); // Fetch immediately
-      intervalId = setInterval(fetchMessages, 10 * 60 * 1000); // Fetch every 5 minutes
+      intervalId = setInterval(fetchMessages, 10 * 60 * 1000); // Fetch every 10 minutes
     }
-  
+
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [user]);
-  
 
   // Fetch notifications
   useEffect(() => {
@@ -455,6 +445,7 @@ export default function Dashboard() {
         if (!querySnapshot.empty) {
           const docSnap = querySnapshot.docs[0];
           setUserDetails(docSnap.data());
+          setUserDetailsDocId(docSnap.id); // Store the document ID
         } else {
           // Open the initial modal if details are missing
           setInitialDetailsModalOpen(true);
@@ -470,6 +461,46 @@ export default function Dashboard() {
       fetchUserDetails();
     }
   }, [user]);
+
+  // Update condition from searchParams and save to database if necessary
+  useEffect(() => {
+    const conditionParam = searchParams.get('condition');
+    console.log('Condition Param:', conditionParam);
+    console.log('User Details:', userDetails);
+    console.log('User Details Doc ID:', userDetailsDocId);
+
+    // Function to update condition in Firestore
+    const updateConditionInFirestore = async (newCondition) => {
+      if (userDetailsDocId) {
+        try {
+          const userDetailsRef = doc(db, 'UserEntryDetails', userDetailsDocId);
+          await updateDoc(userDetailsRef, { condition: newCondition });
+          setUserDetails((prevDetails) => ({
+            ...prevDetails,
+            condition: newCondition,
+          }));
+          setCondition(newCondition);
+        } catch (error) {
+          console.error('Error updating condition in database:', error);
+        }
+      }
+    };
+
+    if (conditionParam) {
+      setCondition(conditionParam);
+
+      // Update Firestore only if userDetails are loaded and condition is different
+      if (
+        userDetails &&
+        userDetails.condition !== conditionParam &&
+        userDetailsDocId
+      ) {
+        updateConditionInFirestore(conditionParam);
+      }
+    } else if (userDetails && userDetails.condition) {
+      setCondition(userDetails.condition);
+    }
+  }, [searchParams, userDetails, userDetailsDocId]);
 
   // Handle opening the Messages Dialog
   const handleOpenMessagesDialog = () => {
@@ -725,7 +756,7 @@ export default function Dashboard() {
             display: { xs: 'none', sm: 'block' },
             width: drawerWidth,
             flexShrink: 0,
-            [`& .MuiDrawer-paper`]: {
+            '& .MuiDrawer-paper': {
               width: drawerWidth,
               boxSizing: 'border-box',
             },
@@ -790,7 +821,6 @@ export default function Dashboard() {
                         </Button>
                       </Box>
                       <Grid container spacing={2}>
-                      
                         <Grid item xs={6}>
                           <Typography variant="subtitle2" color="text.secondary">
                             Type of Cancer:
@@ -837,10 +867,8 @@ export default function Dashboard() {
                           <Typography variant="subtitle2" color="text.secondary">
                             Condition:
                           </Typography>
-                          <Typography variant="body1">{condition}</Typography>
+                          <Typography variant="body1">{condition || 'Not specified'}</Typography>
                         </Grid>
-                       
- 
                       </Grid>
                     </Card>
                   </Box>
@@ -925,8 +953,8 @@ export default function Dashboard() {
                     ))}
                     {savedStudies.slice(0, 5).map((study) => {
                       const studyDate = study.timestamp ? new Date(study.timestamp.seconds * 1000) : null;
-                      const shortenedTitle = study.simplifiedTitle.length > 80 
-                        ? study.simplifiedTitle.substring(0, 80) + '...' 
+                      const shortenedTitle = study.simplifiedTitle.length > 80
+                        ? study.simplifiedTitle.substring(0, 80) + '...'
                         : study.simplifiedTitle; // Show first 80 characters, add ellipsis if longer
 
                       return (

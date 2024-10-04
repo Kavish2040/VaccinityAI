@@ -12,7 +12,8 @@ export async function POST(req) {
 
         const prompt = `
 Generate a set of yes/no questions for a clinical trial eligibility screening process based on the following criteria. Ensure that each question meets the guidelines below:
-ASK ONLY THOSE QUESTIONS THAT A PATIENT WITHOUT MUCH SPECIFIC DETAILS ABOUT HIS CONDITION LIKE NUMBERS AND PERCENTAGES CAN ANSWER
+ASK ONLY THOSE QUESTIONS THAT A PATIENT WITHOUT MUCH SPECIFIC DETAILS ABOUT HIS CONDITION LIKE NUMBERS AND PERCENTAGES CAN ANSWER.]
+ASK ALL QUESTIONS THAT CAN BE ASKED ON ELIGIBILITY CRITERIA EXCEPT THE ONE WITH SPECIFIC NUMBERS AND PERCENTAGES AND VALUES. Do ask questions based on age. 
 1. **Simplicity and Accessibility**:
    - **Language**: Use clear, straightforward language suitable for individuals without medical training.
    - **Structure**: Start each question with "Do you" or "Are you" to facilitate easy checkbox selection.
