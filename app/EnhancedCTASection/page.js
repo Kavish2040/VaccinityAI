@@ -99,8 +99,7 @@ const ProfessionalCTASection = () => {
                 Empower Your Health Journey
               </Typography>
               <Typography variant="h6" sx={{ mb: 4, color: 'text.secondary' }}>
-                Join VaccinityAI to access cutting-edge clinical trials and personalized care
-                solutions.
+                Join VaccinityAI to access clinical trials and personalized care.
               </Typography>
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Button

@@ -25,9 +25,13 @@ import {
   IconButton,
   Avatar,
   Divider,
+  Stepper,
+  Step,
+  StepLabel,
+  StepConnector,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useViewportScroll, useTransform} from 'framer-motion';
 import Particles from 'react-tsparticles';
 import { loadFull } from 'tsparticles';
 import { ArrowForward, MenuBook, Science, Insights } from '@mui/icons-material';
@@ -40,6 +44,7 @@ import { Tooltip, Zoom, Dialog, DialogContent } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CloseIcon from '@mui/icons-material/Close';
 import { PersonAdd, MedicalServices, CheckCircle } from '@mui/icons-material';
+import { grey, blue } from '@mui/material/colors';
 // Custom Components
 import FloatingChatbot from './chatbot/FloatingChatbot';
 import ContactForm from './contactform/page.js';
@@ -47,7 +52,20 @@ import FeaturesSection from './FeaturesSection/page.js';
 import EnhancedCTASection from './EnhancedCTASection/page.js';
 import AccountBoxIcon from '@mui/icons-material/AccountBox';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-// Theme
+import ScienceIcon from '@mui/icons-material/Science';
+import InsightsIcon from '@mui/icons-material/Insights';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
+import {
+  Timeline,
+  TimelineItem as MuiTimelineItem,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineContent,
+  TimelineDot,
+} from '@mui/lab';
+
 const theme = createTheme({
   palette: {
     primary: { main: '#3A7BD5' },
@@ -96,8 +114,6 @@ const HeroSection = () => {
   const [condition, setCondition] = useState('');
   const router = useRouter();
   const { isLoaded, user } = useUser();
-  const [displayedText, setDisplayedText] = useState('');
-  const fullText = 'AI-Driven Solutions for a Healthier Tomorrow.';
 
   const handleSearch = () => {
     if (condition.trim()) {
@@ -111,20 +127,6 @@ const HeroSection = () => {
     }
   };
 
-  useEffect(() => {
-    let currentIndex = 0;
-    const typingSpeed = 60;
-
-    const typeWriter = () => {
-      if (currentIndex <= fullText.length) {
-        setDisplayedText(fullText.substring(0, currentIndex));
-        currentIndex++;
-        setTimeout(typeWriter, typingSpeed);
-      }
-    };
-
-    typeWriter();
-  }, [fullText]);
 
   return (
     <Box
@@ -136,24 +138,24 @@ const HeroSection = () => {
         alignItems: 'center',
         justifyContent: 'center',
         overflow: 'hidden',
-        backgroundColor: '#000', // Fallback color
       }}
     >
-      {/* Background Image */}
-      <Box
-        sx={{
+      {/* Parallax Background Image */}
+      <motion.div
+        style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
+          backgroundImage: 'url(/covid-trials.jpg)', // Update with the actual image path
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          zIndex: -1,
-          opacity: 0.8,
+          filter: 'brightness(30%)', // Darkens the image for better text readability
         }}
       />
-      {/* Overlay for gradient effect */}
+
+      {/* Gradient Overlay */}
       <Box
         sx={{
           position: 'absolute',
@@ -161,158 +163,190 @@ const HeroSection = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          background:
-            'linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.8) 100%)',
-          zIndex: -1,
         }}
       />
 
-      <Container maxWidth="md" sx={{ textAlign: 'center' }}>
-        {/* Animated Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <Typography
-            variant="h2"
-            sx={{
-              fontWeight: 700,
-              color: '#FFFFFF',
-              marginBottom: 4,
-              fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
-              lineHeight: 1.2,
-            }}
+      {/* Content Container */}
+      <Container
+        maxWidth="lg"
+        sx={{ position: 'relative', zIndex: 1, padding: { xs: '0 20px', sm: '0 40px' } }}
+      >
+        <Box sx={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+          {/* Animated Heading */}
+          <motion.div
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1 }}
           >
-            {displayedText}
-          </Typography>
-        </motion.div>
-
-        {/* Subheading */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1.25}}
-        >
-              <Typography
-            variant="h5"
-            sx={{
-              color: '#5a5a5a', // Darker text for better readability
-              marginBottom: 6,
-              textAlign: 'center',
-              fontSize: { xs: '1rem', sm: '1.25rem', md: '1.5rem' },
-            }}
-          >
-            Are you a{' '}
-            <Box component="span" sx={{ color: '#4CAF50', fontWeight: 'bold' }}>
-              Patient
-            </Box>
-            ? Enter your condition below to begin
-          </Typography>
-
-        </motion.div>
-
-        {/* Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 1 }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              maxWidth: '600px',
-              margin: '0 auto',
-              background: 'rgba(255, 255, 255, 0.15)',
-              borderRadius: '50px',
-              padding: '6px',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            }}
-          >
-            <TextField
-              fullWidth
-              variant="standard"
-              placeholder="Enter disease or condition"
-              value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSearch();
-                }
-              }}
-              InputProps={{
-                disableUnderline: true,
-                style: { color: '#FFFFFF', paddingLeft: '20px' },
-              }}
+            <Typography
+              variant="h1"
               sx={{
-                '& .MuiInputBase-input::placeholder': {
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  opacity: 1,
-                },
-              }}
-            />
-            <IconButton
-              onClick={handleSearch}
-              sx={{
+                fontWeight: 500,
                 color: '#FFFFFF',
-                backgroundColor: '#3a7bd5',
-                '&:hover': { backgroundColor: '#2c5aa0' },
-                padding: '10px',
-                borderRadius: '50%',
-                marginRight: '10px',
+                marginBottom: 2,
+                fontSize: {
+                  xs: '1.8rem',
+                  sm: '2.5rem',
+                  md: '3.2rem',
+                  lg: '4rem',
+                },
+                lineHeight: 1.2,
+                fontFamily: "'Montserrat', sans-serif",
+                letterSpacing: '-0.02em',
+                textTransform: 'none',
+                whiteSpace: 'nowrap',
+                overflow: 'visible',
               }}
             >
-              <SearchIcon />
-            </IconButton>
-          </Box>
-        </motion.div>
+              Bridging Patients and Research
+            </Typography>
+          </motion.div>
 
-        {/* Call-to-Action Button */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 1 }}
-        >
-          <Button
-            variant="outlined"
-            color="primary"
-            size="large"
-            sx={{
-              marginTop: 4,
-              color: '#FFFFFF',
-              borderColor: '#FFFFFF',
-              borderRadius: '30px',
-              padding: '10px 30px',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderColor: '#FFFFFF',
-              },
-            }}
-            onClick={() => {
-              document
-                .getElementById('features-section')
-                .scrollIntoView({ behavior: 'smooth' });
-            }}
+          {/* Subheading */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
           >
-            Learn More
-          </Button>
-        </motion.div>
+            <Typography
+              variant="h4"
+              sx={{
+                color: '#FFFFFF', // Enhanced readability with white text
+                marginBottom: 4,
+                fontSize: {
+                  xs: '0.9rem',
+                  sm: '1rem',
+                  md: '1.2rem',
+                },
+                fontFamily: "'Roboto', sans-serif",
+              }}
+            >
+              Are you a{' '}
+              <Box
+                component="span"
+                sx={{ color: '#4CAF50', fontWeight: 'bold' }}
+              >
+                Patient
+              </Box>
+              ? Enter your condition below to begin
+            </Typography>
+          </motion.div>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 1 }}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                maxWidth: '600px',
+                margin: '0 auto',
+                background: 'rgba(255, 255, 255, 0.15)',
+                borderRadius: '50px',
+                padding: '6px',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+            >
+              <TextField
+                fullWidth
+                variant="standard"
+                placeholder="Enter disease or condition"
+                value={condition}
+                onChange={(e) => setCondition(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSearch();
+                  }
+                }}
+                InputProps={{
+                  disableUnderline: true,
+                  style: {
+                    color: '#FFFFFF',
+                    paddingLeft: '20px',
+                    fontFamily: "'Roboto', sans-serif",
+                  },
+                }}
+                sx={{
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    opacity: 1,
+                  },
+                }}
+              />
+              <IconButton
+                onClick={handleSearch}
+                sx={{
+                  color: '#FFFFFF',
+                  backgroundColor: '#4285F4',
+                  '&:hover': { backgroundColor: '#3367D6' },
+                  padding: '10px',
+                  borderRadius: '50%',
+                  marginRight: '6px',
+                }}
+              >
+                <SearchIcon />
+              </IconButton>
+            </Box>
+          </motion.div>
+
+          {/* Call-to-Action Button */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6, duration: 1 }}
+          >
+            <Button
+              variant="outlined"
+              size="large"
+              sx={{
+                marginTop: 4,
+                color: '#FFFFFF',
+                borderColor: '#FFFFFF',
+                borderRadius: '30px',
+                padding: '10px 30px',
+                fontFamily: "'Roboto', sans-serif",
+                fontWeight: 500,
+                '&:hover': {
+                  backgroundColor: '#FF8C00',
+                  borderColor: '#000000',
+                },
+              }}
+              onClick={() => {
+                const featuresSection = document.getElementById('features-section');
+                if (featuresSection) {
+                  featuresSection.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              Learn More
+            </Button>
+          </motion.div>
+        </Box>
       </Container>
 
       {/* Scroll Down Indicator */}
       <motion.div
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
-        sx={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)' }}
+        sx={{
+          position: 'absolute',
+          bottom: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1,
+        }}
       >
         <ArrowDownwardIcon sx={{ color: '#FFFFFF', fontSize: '2rem' }} />
       </motion.div>
     </Box>
   );
 };
+
 
 const CustomAppBar = () => {
   const [scrolling, setScrolling] = useState(false);
@@ -333,7 +367,7 @@ const CustomAppBar = () => {
       position="fixed"
       elevation={scrolling ? 4 : 0}
       sx={{
-        backdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(2px)',
         backgroundColor: scrolling ? 'rgba(255, 255, 255, 0.9)' : 'transparent',
         transition: 'background-color 0.3s ease, box-shadow 0.3s ease',
       }}
@@ -344,7 +378,7 @@ const CustomAppBar = () => {
           sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer', mb:-1.5}}
           onClick={() => router.push('/')}
         >
-          <Image src="/logo1.png" alt="VaccinityAI Logo" width={190} height={105} />
+          <Image src="/logo1.png" alt="VaccinityAI Logo" width={195} height={105} />
         </Box>
 
         {/* Navigation */}
@@ -409,269 +443,272 @@ const CustomAppBar = () => {
   );
 };
 
-// Improved Timeline Step Design
-const TimelineStep = ({ icon, title, description }) => (
-  <Card
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 3,
-      boxShadow: '0px 10px 30px rgba(58, 123, 213, 0.2)',
-      padding: 3,
-      backgroundColor: 'white',
-      height: '300px',
-      width: '100%',
-      maxWidth: '400px',
-      margin: '0 auto',
-    }}
-  >
-    <Avatar sx={{ width: 80, height: 80, mb: 2, bgcolor: 'primary.main' }}>
-      {icon}
-    </Avatar>
-    <Typography variant="h6" fontWeight="600" sx={{ mb: 1, color: 'primary.main' }}>
-      {title}
-    </Typography>
-    <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '240px' }}>
-      {description}
-    </Typography>
-  </Card>
-);
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.5,
+    },
+  },
+};
 
-// Redesigned "How VaccinityAI Works" Section with Animations
+const stepVariants = {
+  hidden: { opacity: 0, y: 50 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const lineVariants = {
+  hidden: { scaleX: 0 },
+  visible: { scaleX: 1 },
+};
+
+const StepItem = ({ icon, title, description, isFirst, isLast }) => {
+  return (
+    <Box sx={{ position: 'relative', flex: 1, textAlign: 'center' }}>
+      {/* Left Connector Line */}
+      {!isFirst && (
+        <motion.div
+          variants={lineVariants}
+          style={{
+            position: 'absolute',
+            top: '40px',
+            left: 0,
+            width: '50%',
+            height: '2px',
+            backgroundColor: '#3f51b5',
+            transformOrigin: 'left',
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Animated Icon */}
+      <motion.div
+        variants={stepVariants}
+        style={{ position: 'relative', zIndex: 1 }}
+      >
+        <Avatar
+          sx={{
+            bgcolor: '#3A7BD5',
+            width: 80,
+            height: 80,
+            margin: '0 auto',
+            mb: 2,
+          }}
+        >
+          {icon}
+        </Avatar>
+      </motion.div>
+
+      {/* Right Connector Line */}
+      {!isLast && (
+        <motion.div
+          variants={lineVariants}
+          style={{
+            position: 'absolute',
+            top: '40px',
+            right: 0,
+            width: '50%',
+            height: '2px',
+            backgroundColor: '#3A7BD5',
+            transformOrigin: 'left',
+            zIndex: 0,
+          }}
+        />
+      )}
+
+      {/* Animated Title and Description */}
+      <motion.div variants={stepVariants}>
+        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+          {title}
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          {description}
+        </Typography>
+      </motion.div>
+    </Box>
+  );
+};
+
 const ServiceExplanation = () => {
-  const [activeStep, setActiveStep] = useState(0);
   const [openVideo, setOpenVideo] = useState(false);
 
   const steps = [
     {
-      icon: <AccountBoxIcon fontSize="large" />,
+      icon: <AccountBoxIcon sx={{ fontSize: 40, color: 'white' }} />,
       title: 'Sign Up',
       description:
-        'Create your profile and input your health information securely.',
+        'Create your profile and securely input your health information to get started.',
     },
     {
-      icon: <Science fontSize="large" />,
+      icon: <ScienceIcon sx={{ fontSize: 40, color: 'white' }} />,
       title: 'AI Matching',
       description:
-        'Our AI analyzes your profile to find suitable clinical trials.',
+        'Our AI analyzes your profile to match you with suitable clinical trials.',
     },
     {
-      icon: <Insights fontSize="large" />,
+      icon: <InsightsIcon sx={{ fontSize: 40, color: 'white' }} />,
       title: 'Stay Informed',
       description:
         'Receive updates, educational resources, and support throughout your journey.',
     },
   ];
 
-  const features = [
-    {
-      icon: <MenuBook />,
-      title: 'Personalized Insights',
-      description: 'Receive information tailored to your health profile.',
-    },
-    {
-      icon: <Science />,
-      title: 'Trial Matching',
-      description: 'Find trials that suit your specific condition.',
-    },
-    {
-      icon: <Insights />,
-      title: '24/7 Support',
-      description: 'Access resources and assistance whenever you need.',
-    },
-  ];
-
-  const handleNext = () => {
-    setActiveStep((prevActiveStep) => (prevActiveStep + 1) % steps.length);
-  };
-
-  const handleBack = () => {
-    setActiveStep(
-      (prevActiveStep) => (prevActiveStep - 1 + steps.length) % steps.length
-    );
-  };
-
   return (
     <Box sx={{ py: 10 }}>
-      <Container
-        maxWidth={false} // Remove maxWidth to allow full-width
-        sx={{ px: { xs: 2, sm: 4, md: 6, lg: 8 } }} // Control padding
-      >
+      <Container maxWidth="lg">
+        {/* Section Title */}
         <Typography
-          variant="h2"
-          component="h2"
-          textAlign="center"
-          fontWeight="bold"
-          sx={{ mb: 8, color: '#3A7BD5' }}
+          variant="h3"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: 'bold', mb: 8 }}
         >
           How VaccinityAI Works
         </Typography>
 
-        {/* Grid Layout with Animation on Left and Larger Circular Video with Features on Right */}
-        <Grid container spacing={6} alignItems="center">
-          {/* Left Side: Animation */}
-          <Grid item xs={12} md={6}>
-            <Box sx={{ position: 'relative', minHeight: '450px' }}>
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeStep}
-                  initial={{ opacity: 0, x: 100 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -100 }}
-                  transition={{ duration: 0.5 }}
-                  style={{ position: 'absolute', width: '100%' }}
-                >
-                  <TimelineStep
-                    icon={steps[activeStep].icon}
-                    title={steps[activeStep].title}
-                    description={steps[activeStep].description}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: -15 }}>
-              <Button onClick={handleBack} sx={{ mr: 2 }}>
-                Previous
-              </Button>
-              <Button onClick={handleNext}>Next</Button>
-            </Box>
-          </Grid>
-
-          {/* Right Side: Larger Circular GIF with Features on the Right */}
-          <Grid item xs={12} md={6} sx={{ mt: { xs: 4, md: 0 } }}>
-            <Grid container spacing={2} alignItems="center">
-              {/* Circular GIF */}
-              <Grid item xs={12} sm={7}>
-                <Box
-                  sx={{
-                    position: 'relative',
-                    width: '100%',
-                    paddingTop: '100%', // Makes it square
-                    borderRadius: '50%', // Makes it circular
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-                    transition: 'transform 0.3s ease, boxShadow 0.3s ease',
-                    '&:hover': {
-                      transform: 'scale(1.05) rotate(5deg)',
-                      boxShadow: '0 15px 40px rgba(0,0,0,0.3)',
-                    },
-                  }}
-                  onClick={() => setOpenVideo(true)}
-                >
-                  {/* Embedded GIF */}
-                  <iframe
-                    src="https://giphy.com/embed/kfcNKxfVXS3zkRdu29"
-                    width="100%"
-                    height="100%"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      borderRadius: '50%', // Keep circular shape
-                    }}
-                    frameBorder="0"
-                    allowFullScreen
-                  ></iframe>
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                     
-                    }}
-                  >
-                    <PlayArrowIcon sx={{ fontSize: 80, color: 'grey' }} />
-                  </Box>
-                </Box>
-              </Grid>
-
-              {/* Features on the Right of the GIF */}
-              <Grid item xs={12} sm={5}>
-                <Grid container spacing={2}>
-                  {features.map((feature, index) => (
-                    <Grid item xs={12} key={index}>
-                      <Tooltip
-                        title={feature.description}
-                        arrow
-                        TransitionComponent={Zoom}
-                      >
-                        <Card
-                          elevation={2}
-                          sx={{
-                            p: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            height: '100%',
-                            transition: 'all 0.3s ease',
-                            '&:hover': {
-                              transform: 'translateY(-5px)',
-                              boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
-                            },
-                          }}
-                        >
-                          <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                            {feature.icon}
-                          </Avatar>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {feature.title}
-                          </Typography>
-                        </Card>
-                      </Tooltip>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-
-        {/* Video Dialog */}
-        <Dialog
-          open={openVideo}
-          onClose={() => setOpenVideo(false)}
-          maxWidth="md"
-          fullWidth
+        {/* Horizontal Timeline */}
+        <Box
+          component={motion.div}
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          sx={{ position: 'relative', mb: 8, overflow: 'hidden' }}
         >
-          <DialogContent sx={{ p: 0, bgcolor: 'background.paper' }}>
-            <IconButton
-              onClick={() => setOpenVideo(false)}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {steps.map((step, index) => (
+              <StepItem
+                key={index}
+                icon={step.icon}
+                title={step.title}
+                description={step.description}
+                isFirst={index === 0}
+                isLast={index === steps.length - 1}
+              />
+            ))}
+          </Box>
+        </Box>
+
+        {/* Video Section */}
+        <Box
+          sx={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: 800,
+            margin: '0 auto',
+          }}
+        >
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            transition={{ type: 'spring', stiffness: 300 }}
+            onClick={() => setOpenVideo(true)}
+            style={{ cursor: 'pointer' }}
+          >
+            <Box
               sx={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                color: 'white',
-                bgcolor: 'rgba(0,0,0,0.5)',
-                '&:hover': { bgcolor: 'rgba(0,0,0,0.7)' },
-                zIndex: 1,
+                position: 'relative',
+                width: '100%',
+                paddingTop: '56.25%', // 16:9 Aspect Ratio
+                borderRadius: 4,
+                overflow: 'hidden',
+                boxShadow: 3,
               }}
             >
-              <CloseIcon />
-            </IconButton>
-            <Box sx={{ position: 'relative', pb: '56.25%', height: 0 }}>
-              <iframe
-                src="https://www.youtube.com/embed/sVUNRKtpmnA"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
+              <video
+                src="/video1dna.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
                 style={{
                   position: 'absolute',
                   top: 0,
                   left: 0,
                   width: '100%',
                   height: '100%',
+                  objectFit: 'cover',
                 }}
               />
+              {/* Play Icon Overlay */}
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <Avatar
+                  sx={{
+                    bgcolor: 'rgba(0,0,0,0.6)',
+                    width: 80,
+                    height: 80,
+                  }}
+                >
+                  <PlayArrowIcon sx={{ color: '#fff', fontSize: 50 }} />
+                </Avatar>
+              </Box>
             </Box>
-          </DialogContent>
-        </Dialog>
+          </motion.div>
+        </Box>
+
+        {/* Video Modal */}
+        <Modal
+          open={openVideo}
+          onClose={() => setOpenVideo(false)}
+          closeAfterTransition
+          BackdropProps={{ timeout: 500 }}
+        >
+          <Fade in={openVideo}>
+            <Box
+              sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: { xs: '90%', sm: '80%', md: '60%' },
+                bgcolor: 'background.paper',
+                borderRadius: 2,
+                boxShadow: 24,
+                p: 2,
+              }}
+            >
+              {/* Close Button */}
+              <IconButton
+                onClick={() => setOpenVideo(false)}
+                aria-label="Close Video"
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  color: 'grey.500',
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+
+              {/* Embedded YouTube Video */}
+              <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+                <iframe
+                  src="https://www.youtube.com/embed/sVUNRKtpmnA"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="VaccinityAI Overview"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 8,
+                  }}
+                ></iframe>
+              </Box>
+            </Box>
+          </Fade>
+        </Modal>
       </Container>
     </Box>
   );
