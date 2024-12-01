@@ -15,10 +15,10 @@ import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
-import { useUser } from "@clerk/nextjs"; // Import Clerk's useUser for user details
+import { useUser } from "@clerk/nextjs"; 
 import FloatingChatbot from '@/app/chatbot/FloatingChatbot';
 
-// Firebase configuration
+
 const firebaseConfig = {
   apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
   authDomain: "vaccinityai-7941b.firebaseapp.com",
@@ -29,12 +29,12 @@ const firebaseConfig = {
   measurementId: "G-J0JVXZ72HD"
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 const db = getFirestore(app);
 
-// Custom theme for MUI components
+
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -88,13 +88,13 @@ export default function Eligibility() {
   const [isSaving, setIsSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Fetch eligibility criteria and corresponding questions
+ 
   useEffect(() => {
     const eligibilityCriteriaParam = searchParams.get('eligibilityCriteria');
     const leadSponsorParam = searchParams.get('leadSponsor');
     const simplifiedTitleParam = searchParams.get('simplifiedTitle');
 
-    // Decode and set leadSponsor
+  
     if (leadSponsorParam) {
       try {
         const decodedSponsor = decodeURIComponent(leadSponsorParam);
@@ -108,7 +108,7 @@ export default function Eligibility() {
     if (simplifiedTitleParam) {
       try {
         const decodedTitle = decodeURIComponent(simplifiedTitleParam);
-        setSimplifiedTitle(decodedTitle.toLowerCase()); // Corrected line
+        setSimplifiedTitle(decodedTitle.toLowerCase()); 
       } catch (error) {
         console.error('Error decoding simplified title:', error);
         setSimplifiedTitle(simplifiedTitleParam);
@@ -130,7 +130,7 @@ export default function Eligibility() {
     }
   }, [searchParams, router]);
 
-  // Fetch questions based on eligibility criteria
+
   const fetchQuestions = async (criteria) => {
     setLoading(true);
     try {
@@ -162,7 +162,7 @@ export default function Eligibility() {
     }
   };
 
-  // Update answers and track progress
+
   const handleAnswerChange = (index, value) => {
     const updatedAnswers = [...answers];
     updatedAnswers[index] = value;
@@ -171,7 +171,7 @@ export default function Eligibility() {
     setProgress((filled / questions.length) * 100);
   };
 
-  // Submit answers and get match result
+
   const handleSubmit = async () => {
     if (answers.some(a => a.trim() === '')) {
       setSnackbarMessage("Please answer all questions before submitting.");
@@ -180,7 +180,7 @@ export default function Eligibility() {
       return;
     }
     try {
-      // Modify the questions to send only the text
+     
       const questionsTexts = questions.map(q => q.text);
 
       const response = await fetch('/api/match', {
@@ -202,14 +202,14 @@ export default function Eligibility() {
     }
   };
 
-  // Save the study and user data to Firebase
+ 
   const handleSaveStudy = async () => {
     if (!matchResult || !user?.id) return;
     setIsSaving(true);
     try {
       const userName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
 
-      // Define the query to check for duplicates
+    
       const studiesRef = collection(db, "savedStudies");
       const q = query(
         studiesRef,
@@ -220,7 +220,7 @@ export default function Eligibility() {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        // Duplicate found
+     
         setSnackbarMessage("This study has already been saved.");
         setSnackbarSeverity("warning");
         setSnackbarOpen(true);
@@ -228,16 +228,16 @@ export default function Eligibility() {
         return;
       }
 
-      // No duplicate found, proceed to add the document
+    
       const docRef = await addDoc(studiesRef, {
         eligibilityCriteria,
-        questions: questions.map(q => q.text), // Save only question texts
+        questions: questions.map(q => q.text), 
         answers,
         matchResult,
         timestamp: new Date(),
         userId: user.id,
-        userName: userName, // Include user's name
-        leadSponsor: leadSponsor.trim(), // Include lead sponsor
+        userName: userName, 
+        leadSponsor: leadSponsor.trim(), 
         simplifiedTitle: simplifiedTitle,
       });
       console.log("Document written with ID: ", docRef.id);
