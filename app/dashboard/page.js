@@ -65,7 +65,7 @@ import {
 } from 'firebase/firestore';
 import { initializeApp } from 'firebase/app';
 
-import UserDetailsModal from '../components/UserDetailsModal'; // Corrected import path
+import UserDetailsModal from '../components/UserDetailsModal'; 
 
 // Firebase configuration
 const firebaseConfig = {
@@ -84,15 +84,15 @@ const db = getFirestore(app);
 
 const drawerWidth = 280;
 
-// Material-UI theme customization
+
 const theme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1976d2', // Primary color
+      main: '#1976d2', 
     },
     secondary: {
-      main: '#ff4081', // Secondary color
+      main: '#ff4081', 
     },
     background: {
       default: '#121212',
@@ -148,7 +148,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-selected': {
-            backgroundColor: 'rgba(25, 118, 210, 0.2)', // Primary color
+            backgroundColor: 'rgba(25, 118, 210, 0.2)', 
             '&:hover': {
               backgroundColor: 'rgba(25, 118, 210, 0.3)',
             },
@@ -169,13 +169,13 @@ export default function Dashboard() {
   const [loadingStudies, setLoadingStudies] = useState(true);
   const [checkingUserType, setCheckingUserType] = useState(true);
 
-  // State for messaging
+
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [openMessagesDialog, setOpenMessagesDialog] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState(null);
 
-  // State for notifications
+
   const [notifications, setNotifications] = useState([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
@@ -186,24 +186,24 @@ export default function Dashboard() {
 
   const [searchTerm, setSearchTerm] = useState('');
 
-  // New State for User Entry Details
+ 
   const [userDetails, setUserDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(true);
 
-  // State for Edit Details Modal
+ 
   const [editOpen, setEditOpen] = useState(false);
-  // State for Initial Details Modal
+ 
   const [initialDetailsModalOpen, setInitialDetailsModalOpen] = useState(false);
 
   const [condition, setCondition] = useState('');
   const [userDetailsDocId, setUserDetailsDocId] = useState(null);
 
-  // Handle Drawer Toggle
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  // Handle Profile Menu
+ 
   const handleProfileMenuOpen = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -233,7 +233,7 @@ export default function Dashboard() {
           { text: 'Home', icon: <HomeIcon />, onClick: () => router.push('/') },
           { text: 'Clinical Trials', icon: <ScienceIcon />, onClick: () => router.push('/generate') },
           { text: 'Get Genetic Testing Results', icon: <DocumentScannerIcon />, onClick: () => router.push('/genetic-testing') },
-          // Add more navigation items here
+   
         ].map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton onClick={item.onClick}>
@@ -265,7 +265,7 @@ export default function Dashboard() {
     </Box>
   );
 
-  // Fetch saved studies from Firebase
+
   useEffect(() => {
     const fetchSavedStudies = async () => {
       if (!user?.id) {
@@ -302,7 +302,7 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  // Fetch messages for the patient
+ 
   useEffect(() => {
     let intervalId;
 
@@ -381,8 +381,8 @@ export default function Dashboard() {
     };
 
     if (user) {
-      fetchMessages(); // Fetch immediately
-      intervalId = setInterval(fetchMessages, 10 * 60 * 1000); // Fetch every 10 minutes
+      fetchMessages(); 
+      intervalId = setInterval(fetchMessages, 10 * 60 * 1000); 
     }
 
     return () => {
@@ -390,7 +390,7 @@ export default function Dashboard() {
     };
   }, [user]);
 
-  // Fetch notifications
+
   useEffect(() => {
     const fetchNotifications = () => {
       if (!user?.id) return;
@@ -414,7 +414,7 @@ export default function Dashboard() {
           });
           if (!data.read) unread += 1;
         });
-        // Sort notifications by timestamp descending
+     
         notifs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
         setNotifications(notifs);
         setUnreadNotifications(unread);
@@ -445,9 +445,9 @@ export default function Dashboard() {
         if (!querySnapshot.empty) {
           const docSnap = querySnapshot.docs[0];
           setUserDetails(docSnap.data());
-          setUserDetailsDocId(docSnap.id); // Store the document ID
+          setUserDetailsDocId(docSnap.id); 
         } else {
-          // Open the initial modal if details are missing
+     
           setInitialDetailsModalOpen(true);
         }
       } catch (error) {
@@ -462,7 +462,7 @@ export default function Dashboard() {
     }
   }, [user]);
 
-  // Update condition from searchParams and save to database if necessary
+
   useEffect(() => {
     const conditionParam = searchParams.get('condition');
     console.log('Condition Param:', conditionParam);
@@ -502,19 +502,19 @@ export default function Dashboard() {
     }
   }, [searchParams, userDetails, userDetailsDocId]);
 
-  // Handle opening the Messages Dialog
+ 
   const handleOpenMessagesDialog = () => {
     setOpenMessagesDialog(true);
     markAllMessagesAsRead();
   };
 
-  // Handle closing the Messages Dialog
+ 
   const handleCloseMessagesDialog = () => {
     setOpenMessagesDialog(false);
     setSelectedMessage(null);
   };
 
-  // Handle selecting a message to view
+
   const handleSelectMessage = (message) => {
     setSelectedMessage(message);
     if (!message.read) {
@@ -522,7 +522,7 @@ export default function Dashboard() {
     }
   };
 
-  // Mark a single message as read
+ 
   const markMessageAsRead = async (messageId) => {
     try {
       const messageRef = doc(db, 'messages', messageId);
@@ -538,7 +538,7 @@ export default function Dashboard() {
     }
   };
 
-  // Mark all messages as read
+  
   const markAllMessagesAsRead = async () => {
     try {
       const unreadMessages = messages.filter((msg) => !msg.read);
@@ -557,7 +557,7 @@ export default function Dashboard() {
     }
   };
 
-  // Handle deleting a study
+  
   const handleDeleteStudy = async (id) => {
     try {
       await deleteDoc(doc(db, 'savedStudies', id));
@@ -567,12 +567,12 @@ export default function Dashboard() {
     }
   };
 
-  // Filtered saved studies based on search term
+ 
   const filteredStudies = savedStudies.filter((study) =>
     study.simplifiedTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Check if the user is a patient; redirect if not
+ 
   useEffect(() => {
     if (isLoaded) {
       console.log('Dashboard: User is loaded:', user);
@@ -597,14 +597,14 @@ export default function Dashboard() {
     }
   }, [isLoaded, user, router]);
 
-  // Handle saving user details from the modal
+       
   const handleSaveUserDetails = (newDetails) => {
     setUserDetails(newDetails);
-    // Close the initial modal if it was open
+ 
     if (initialDetailsModalOpen) {
       setInitialDetailsModalOpen(false);
     }
-    // You can also refresh other parts of the dashboard if necessary
+
   };
 
   if (checkingUserType || loadingStudies || loadingDetails) {
@@ -955,7 +955,7 @@ export default function Dashboard() {
                       const studyDate = study.timestamp ? new Date(study.timestamp.seconds * 1000) : null;
                       const shortenedTitle = study.simplifiedTitle.length > 80
                         ? study.simplifiedTitle.substring(0, 80) + '...'
-                        : study.simplifiedTitle; // Show first 80 characters, add ellipsis if longer
+                        : study.simplifiedTitle;
 
                       return (
                         <ListItem key={study.id}>
@@ -963,7 +963,7 @@ export default function Dashboard() {
                             <ScienceIcon color="primary" />
                           </ListItemIcon>
                           <ListItemText
-                            // Only display the first 80 characters of the title
+                        
                             primary={`Saved Study: ${shortenedTitle}`}
                             secondary={studyDate ? studyDate.toLocaleString() : 'No date available'}
                           />
@@ -1078,8 +1078,8 @@ export default function Dashboard() {
               </Card>
             </Grid>
 
-            {/* Additional Sections (e.g., Upcoming Appointments) */}
-            {/* You can add more sections here as needed */}
+            {/* Additional Sections  */}
+           
           </Grid>
         </Box>
       </Box>
