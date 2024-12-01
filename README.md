@@ -11,9 +11,9 @@ Vaccinity is a web-based platform designed to provide personalized medical insig
 
 ## Technologies Used
 - **Frontend**: React.js, Next.js
-- **Backend**: Python, FastAPI
+- **Backend**: Node, Express, Python
 - **Database**: Firebase
-- **AI**: spaCy (for NLP), Claude (for clinical trial matching)
+- **AI**: spaCy (for NLP), Claude, OpenAI
 - **Messaging**: Firebase Cloud Messaging
 - **Payment Processing**: Stripe API (for user subscriptions)
 
