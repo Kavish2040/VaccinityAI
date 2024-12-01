@@ -45,7 +45,7 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import CloseIcon from '@mui/icons-material/Close';
 import { PersonAdd, MedicalServices, CheckCircle } from '@mui/icons-material';
 import { grey, blue } from '@mui/material/colors';
-// Custom Components
+
 import FloatingChatbot from './chatbot/FloatingChatbot';
 import ContactForm from './contactform/page.js';
 import FeaturesSection from './FeaturesSection/page.js';
@@ -118,10 +118,10 @@ const HeroSection = () => {
   const handleSearch = () => {
     if (condition.trim()) {
       if (user) {
-        // User is logged in, redirect to dashboard
+       
         router.push(`/dashboard?condition=${encodeURIComponent(condition)}`);
       } else {
-        // User is not logged in, redirect to sign-up page
+     
         router.push(`/sign-up?condition=${encodeURIComponent(condition)}`);
       }
     }
@@ -148,10 +148,10 @@ const HeroSection = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundImage: 'url(/covid-trials.jpg)', // Update with the actual image path
+          backgroundImage: 'url(/covid-trials.jpg)', 
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          filter: 'brightness(30%)', // Darkens the image for better text readability
+          filter: 'brightness(30%)', 
         }}
       />
 
@@ -211,7 +211,7 @@ const HeroSection = () => {
             <Typography
               variant="h4"
               sx={{
-                color: '#FFFFFF', // Enhanced readability with white text
+                color: '#FFFFFF', 
                 marginBottom: 4,
                 fontSize: {
                   xs: '0.9rem',
