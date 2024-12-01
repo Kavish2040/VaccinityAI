@@ -167,7 +167,7 @@ const FloatingChatbot = () => {
           borderRadius: '50%',
           boxShadow: 3,
           bgcolor: isOpen ? '#1976d2' : '#1976d2',
-          pointerEvents: 'auto',  // Ensure the button is clickable
+          pointerEvents: 'auto',  
           '&:hover': {
             bgcolor: '#1565c0',
             transform: 'scale(1.1)',
