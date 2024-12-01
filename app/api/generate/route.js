@@ -3,12 +3,12 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
-// Initialize OpenAI with your API key
+
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-// Function to simplify the disease input
+
 async function simplifyDisease(text) {
     try {
         const completion = await openai.chat.completions.create({
@@ -27,15 +27,14 @@ async function simplifyDisease(text) {
         return simplifiedDisease;
     } catch (error) {
         console.error('Error simplifying disease:', error);
-        return text; // Return original text if simplification fails
+        return text; 
     }
 }
 
-// Function to simplify the study title
 async function simplifyTitle(title) {
     try {
         const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini", // Corrected model name from "gpt-4o-mini" to "gpt-4"
+            model: "gpt-4o-mini", 
             messages: [
                 {
                     role: "system",
@@ -48,11 +47,11 @@ async function simplifyTitle(title) {
         return completion.choices[0].message.content.trim();
     } catch (error) {
         console.error('Error simplifying title:', error);
-        return title; // Return original title if simplification fails
+        return title; 
     }
 }
 
-// Function to fetch clinical trials from ClinicalTrials.gov API
+
 async function fetchClinicalTrials(disease, location, intervention, pageSize = 25, pageToken = null) {
     const baseURL = 'https://clinicaltrials.gov/api/v2/studies';
     const params = new URLSearchParams({
@@ -87,10 +86,10 @@ async function fetchClinicalTrials(disease, location, intervention, pageSize = 2
     }
 }
 
-// Define allowed overallStatus values
+
 const allowedStatuses = ["RECRUITING","ACTIVE"];
 
-// POST handler for the generate API
+
 export async function POST(req) {
     try {
         const requestBody = await req.json();
@@ -127,9 +126,9 @@ export async function POST(req) {
                 const statusModule = protocolSection.statusModule;
                 const overallStatus = statusModule?.overallStatus || "Not specified";
 
-                // **Filter studies based on allowedStatuses**
+               
                 if (!allowedStatuses.includes(overallStatus)) {
-                    continue; // Skip studies that do not have the desired status
+                    continue; 
                 }
 
                 const minimumAgeValue = protocolSection.eligibilityModule?.minimumAge || "0 years";
