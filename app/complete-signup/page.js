@@ -14,7 +14,7 @@ export default function CompleteSignup() {
       // Extract query parameters from the URL
       const params = new URLSearchParams(window.location.search);
       const userType = params.get('userType');
-      const condition = params.get('condition'); // Extract the 'condition' parameter
+      const condition = params.get('condition'); 
 
       console.log('CompleteSignup: userType =', userType);
       console.log('CompleteSignup: condition =', condition);
