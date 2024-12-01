@@ -7,17 +7,17 @@ export async function POST(req) {
     try {
         const { questions, answers, eligibilityCriteria } = await req.json();
 
-        // Improved logging for debugging
+        
         console.log("Received Questions:", questions);
         console.log("Received Answers:", answers);
         console.log("Received Eligibility Criteria:", eligibilityCriteria);
 
-        // Validate the incoming data
+     
         if (!questions || !answers || !eligibilityCriteria) {
             return NextResponse.json({ error: "Missing required data" }, { status: 400 });
         }
 
-        // Ensure questions and answers are arrays of strings
+       
         if (!Array.isArray(questions) || !questions.every(q => typeof q === 'string')) {
             return NextResponse.json({ error: "Invalid format for questions. Expected an array of strings." }, { status: 400 });
         }
@@ -26,12 +26,12 @@ export async function POST(req) {
             return NextResponse.json({ error: "Invalid format for answers. Expected an array of strings." }, { status: 400 });
         }
 
-        // Optional: Check if questions and answers lengths match
+       
         if (questions.length !== answers.length) {
             return NextResponse.json({ error: "The number of questions and answers must match." }, { status: 400 });
         }
 
-        // Construct the prompt for the API
+       
         const prompt = `
 You are tasked with evaluating whether a potential participant matches the eligibility criteria for a clinical trial based on their responses to a set of questions. Follow the instructions below meticulously to ensure an accurate assessment.
 
@@ -72,7 +72,7 @@ VERY IMPORTANT: ONLY MATCH OR NOT MATCH BASED ON THE QUESTIONS RECEIVED AND THE 
 5. IGNORE ANSWERS TO QUESTIONS LIKE: Are you using any specific medications that might exclude you from the trial? Say match inspite of the answer to this.
 `;
 
-        // Initialize OpenAI client
+     
         const openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY,
         });
@@ -82,20 +82,20 @@ VERY IMPORTANT: ONLY MATCH OR NOT MATCH BASED ON THE QUESTIONS RECEIVED AND THE 
             return NextResponse.json({ error: 'API key missing.' }, { status: 500 });
         }
 
-        // Create a chat completion
+     
         const response = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [{ role: 'user', content: prompt }],
         });
 
-        // Extract the generated text
+        
         const generatedText = response.choices[0].message.content;
         const lines = generatedText.trim().split('\n');
 
         let matchStatus = lines[0].trim();
         let explanation = lines.slice(1).join(' ').trim() || 'No explanation provided';
 
-        // Ensure the response format
+       
         if (!['Match', 'No Match'].includes(matchStatus)) {
             console.warn('Unexpected match status:', matchStatus);
             return NextResponse.json({ error: 'Unexpected response format from AI.' }, { status: 500 });
