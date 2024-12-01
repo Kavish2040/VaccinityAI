@@ -175,7 +175,7 @@ const LoadingWithFacts = () => {
   useEffect(() => {
     const factInterval = setInterval(() => {
       setCurrentFactIndex(prevIndex => (prevIndex + 1) % interestingFacts.length);
-    }, 5000); // Change fact every 5 seconds
+    }, 5000); 
 
     return () => clearInterval(factInterval);
   }, []);
