@@ -61,7 +61,7 @@ import {
 } from 'firebase/firestore';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Firebase configuration
+
 const firebaseConfig = {
   apiKey: "AIzaSyBZHFXSsCxazH6tnZBxwmzMtMQluVHRWtc",
   authDomain: "vaccinityai-7941b.firebaseapp.com",
@@ -72,13 +72,13 @@ const firebaseConfig = {
   measurementId: "G-J0JVXZ72HD"
 };
 
-// Initialize Firebase
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const drawerWidth = 240;
 
-// Material-UI theme customization
+
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -169,12 +169,12 @@ export default function PharmacyDashboard() {
     severity: 'error',
   });
 
-  // New state for message sending
+ 
   const [messageSubject, setMessageSubject] = useState('');
   const [messageText, setMessageText] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
 
-  // State for analytics data
+
   const [analyticsData, setAnalyticsData] = useState([]);
 
   useEffect(() => {
@@ -280,9 +280,9 @@ export default function PharmacyDashboard() {
     }
   }, [pharmacyName]);
 
-  // Function to generate analytics data (e.g., patients per month)
+
   const generateAnalytics = (studies) => {
-    // Assuming each study has a timestamp indicating when a patient was matched
+  
     const dataMap = {};
 
     studies.forEach((study) => {
@@ -302,7 +302,7 @@ export default function PharmacyDashboard() {
       patients: dataMap[month],
     }));
 
-    // Sort the data by month
+
     analyticsArray.sort((a, b) => new Date(a.month) - new Date(b.month));
 
     setAnalyticsData(analyticsArray);
@@ -385,7 +385,7 @@ export default function PharmacyDashboard() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Updated function to handle sending a message with Subject
+
   const handleSendMessage = async (userId) => {
     const trimmedSubject = messageSubject.trim();
     const trimmedMessage = messageText.trim();
