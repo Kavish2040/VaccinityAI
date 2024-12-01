@@ -12,7 +12,7 @@ import ThumbUpIcon from '@mui/icons-material/ThumbUp';
 import getStripe from '@/utils/get-stripe';
 
 const FullWidthBox = styled(Box)(({ theme }) => ({
-  // Removed full-width styles to make the section cover less width
+
   padding: theme.spacing(10, 0),
 }));
 
