@@ -103,10 +103,10 @@ ${criteria}
         console.error('Error generating questions:', error);
 
         if (error instanceof OpenAI.APIError) {
-            console.error('Status:', error.status);       // e.g., 401
-            console.error('Message:', error.message);     // e.g., 'The authentication token you passed was invalid...'
-            console.error('Code:', error.code);           // e.g., 'invalid_api_key'
-            console.error('Type:', error.type);           // e.g., 'invalid_request_error'
+            console.error('Status:', error.status);       
+            console.error('Message:', error.message);    
+            console.error('Code:', error.code);         
+            console.error('Type:', error.type);         
         }
 
         return NextResponse.json({ error: 'Failed to generate questions.' }, { status: 500 });
