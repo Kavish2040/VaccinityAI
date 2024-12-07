@@ -1,5 +1,9 @@
 # Vaccinity AI
 
+
+Current Site State: https://vaccinity-beta.vercel.app/
+
+
 Vaccinity is a web-based platform designed to provide personalized medical insights by matching patients with relevant clinical trials. The system integrates advanced AI technologies to streamline clinical trial data, providing patients with valuable information about available trials based on their medical history.
 
 ## Features
