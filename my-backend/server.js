@@ -8,7 +8,7 @@ const app = express();
 
 // CORS Configuration
 const corsOptions = {
-  origin: 'http://localhost:3000', // Adjust as per your frontend URL
+  origin: 'http://localhost:3000', 
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
